@@ -45,10 +45,8 @@
         background: #94a3b8;
       }
 
-      /* Utility classes for hiding/showing views */
       .hidden { display: none !important; }
       
-      /* Fade animation */
       .fade-in {
         animation: fadeIn 0.3s ease-in-out;
       }
@@ -60,13 +58,13 @@
 <script type="importmap">
 {
   "imports": {
-    "firebase/": "https://esm.sh/firebase@^12.6.0/",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1",
+    "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "react-hook-form": "https://esm.sh/react-hook-form@^7.68.0"
+    "firebase/": "https://esm.sh/firebase@^12.6.0/",
+    "react-hook-form": "https://esm.sh/react-hook-form@^7.68.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1",
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0"
   }
 }
 </script>
@@ -76,35 +74,33 @@
     <!-- HEADER -->
     <header class="bg-white border-t-4 border-t-emerald-900 border-b border-b-slate-200 shadow-sm sticky top-0 z-30">
         <div class="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div class="flex items-center gap-4 cursor-pointer" onclick="App.navigateTo('dashboard')">
+          <div class="flex items-center gap-4 cursor-pointer" onclick="window.App.navigateTo('dashboard')">
             <div class="flex flex-col items-start justify-center">
                  <div class="text-green-800 font-bold text-2xl tracking-tighter leading-none">
                   VARP <span class="text-gray-600 text-sm font-normal tracking-normal">Imóveis</span>
                  </div>
                  <div class="text-[10px] text-yellow-600 font-serif italic">Desde 1978</div>
             </div>
-            
             <div class="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
-            
             <h1 class="text-lg font-medium text-slate-500 hidden sm:block tracking-tight">
               Painel de Controle de Locação
             </h1>
           </div>
           
           <div class="flex items-center gap-3">
-            <div class="hidden md:flex items-center gap-1 mr-2 bg-slate-100 rounded-full p-1" id="header-actions">
-              <button onclick="App.exportCSV()" title="Exportar CSV" class="p-2 text-slate-500 hover:text-emerald-700 hover:bg-white rounded-full transition-all shadow-sm">
+            <div class="hidden md:flex items-center gap-1 mr-2 bg-slate-100 rounded-full p-1">
+              <button onclick="window.App.exportCSV()" title="Exportar CSV" class="p-2 text-slate-500 hover:text-emerald-700 hover:bg-white rounded-full transition-all shadow-sm">
                 <i data-lucide="download" class="w-4 h-4"></i>
               </button>
-              <button onclick="App.restoreDefaults()" title="Restaurar Padrão" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-white rounded-full transition-all shadow-sm">
+              <button onclick="window.App.restoreDefaults()" title="Restaurar Padrão (Demo)" class="p-2 text-slate-500 hover:text-amber-600 hover:bg-white rounded-full transition-all shadow-sm">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
               </button>
-              <button onclick="App.clearAll()" title="Limpar Tudo" class="p-2 text-slate-500 hover:text-red-600 hover:bg-white rounded-full transition-all shadow-sm">
+              <button onclick="window.App.clearAll()" title="Limpar Tudo" class="p-2 text-slate-500 hover:text-red-600 hover:bg-white rounded-full transition-all shadow-sm">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             </div>
 
-            <button onclick="App.navigateTo('form')" class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-emerald-800 hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all transform hover:-translate-y-0.5">
+            <button onclick="window.App.navigateTo('form')" class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-emerald-800 hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all transform hover:-translate-y-0.5">
               <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
               Novo Imóvel
             </button>
@@ -115,10 +111,14 @@
     <!-- DASHBOARD VIEW -->
     <main id="view-dashboard" class="w-full px-4 sm:px-6 lg:px-8 mt-8 pb-20 fade-in">
         
-        <!-- Stats Cards Row 1: Financial & Totals -->
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="w-full text-center py-4 text-slate-500">
+            Carregando dados do banco de dados...
+        </div>
+
+        <!-- Stats Cards -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-             <!-- Receita Ativa -->
-             <div onclick="App.setFilter('status', 'Locado')" id="card-receita-ativa" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-emerald-50/60 border-emerald-100 shadow-sm">
+             <div onclick="window.App.setFilter('status', 'Locado')" id="card-receita-ativa" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-emerald-50/60 border-emerald-100 shadow-sm">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-slate-700">Receita Mensal (Ativa)</span>
                     <div class="p-1.5 rounded-lg bg-emerald-100 text-emerald-700">
@@ -130,8 +130,7 @@
                 </div>
             </div>
 
-            <!-- Receita Potencial -->
-            <div onclick="App.setFilter('status', 'Disponível')" id="card-receita-potencial" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-slate-50 border-slate-200">
+            <div onclick="window.App.setFilter('status', 'Disponível')" id="card-receita-potencial" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-slate-50 border-slate-200">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-slate-700">Receita Potencial (Vago)</span>
                     <div class="p-1.5 rounded-lg bg-slate-200 text-slate-500">
@@ -143,8 +142,7 @@
                 </div>
             </div>
 
-             <!-- Total Imóveis -->
-             <div onclick="App.resetFilters()" id="card-total" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-slate-200">
+             <div onclick="window.App.resetFilters()" id="card-total" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-slate-200">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-slate-700">Total Imóveis</span>
                     <div class="p-1.5 rounded-lg bg-blue-100 text-blue-700">
@@ -157,7 +155,6 @@
                 </div>
             </div>
 
-             <!-- Ocupação -->
              <div class="relative p-4 rounded-xl border transition-all duration-200 cursor-default bg-white border-slate-200">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Ocupação</span>
@@ -172,10 +169,8 @@
             </div>
         </div>
 
-        <!-- Stats Cards Row 2: Status Breakdown -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-             <!-- Disponíveis -->
-             <div onclick="App.setFilter('status', 'Disponível')" id="card-status-disponivel" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-emerald-100">
+             <div onclick="window.App.setFilter('status', 'Disponível')" id="card-status-disponivel" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-emerald-100">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Disponíveis</span>
                     <div class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
@@ -188,8 +183,7 @@
                 </div>
             </div>
 
-            <!-- Em Processo -->
-            <div onclick="App.setFilter('status', 'Em processo de locação')" id="card-status-processo" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-amber-100">
+            <div onclick="window.App.setFilter('status', 'Em processo de locação')" id="card-status-processo" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-amber-100">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Em Processo</span>
                     <div class="p-1.5 rounded-lg bg-amber-50 text-amber-600">
@@ -202,8 +196,7 @@
                 </div>
             </div>
 
-            <!-- Desocupando -->
-            <div onclick="App.setFilter('status', 'Desocupando')" id="card-status-desocupando" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-purple-100">
+            <div onclick="window.App.setFilter('status', 'Desocupando')" id="card-status-desocupando" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-purple-100">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Desocupando</span>
                     <div class="p-1.5 rounded-lg bg-purple-50 text-purple-600">
@@ -216,8 +209,7 @@
                 </div>
             </div>
 
-            <!-- Suspensos -->
-            <div onclick="App.setFilter('status', 'Suspenso')" id="card-status-suspenso" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-slate-50 border-slate-200">
+            <div onclick="window.App.setFilter('status', 'Suspenso')" id="card-status-suspenso" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-slate-50 border-slate-200">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Suspensos</span>
                     <div class="p-1.5 rounded-lg bg-slate-200 text-slate-500">
@@ -230,8 +222,7 @@
                 </div>
             </div>
 
-            <!-- Locados -->
-            <div onclick="App.setFilter('status', 'Locado')" id="card-status-locado" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-red-100">
+            <div onclick="window.App.setFilter('status', 'Locado')" id="card-status-locado" class="relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md bg-white border-red-100">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Locados</span>
                     <div class="p-1.5 rounded-lg bg-red-50 text-red-500">
@@ -254,25 +245,23 @@
                 <input
                   type="text"
                   id="search-input"
-                  oninput="App.handleSearch(this.value)"
+                  oninput="window.App.handleSearch(this.value)"
                   class="block w-full pl-11 pr-16 py-3 rounded-xl border-none bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-colors sm:text-sm font-medium"
                   placeholder="Ex: Centro João (Busca múltipla...)"
                 />
-                <!-- Search Result Count -->
                 <div id="search-feedback" class="absolute inset-y-0 right-0 pr-2 flex items-center gap-2 hidden">
                     <span id="search-count" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-200 shadow-sm">
                         0
                     </span>
-                    <button onclick="App.clearSearch()" class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors" title="Limpar busca">
+                    <button onclick="window.App.clearSearch()" class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors" title="Limpar busca">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
 
             <div class="flex items-center gap-2 pr-2">
-                <!-- Status Filter Dropdown Trigger -->
                 <div class="relative">
-                    <button onclick="App.toggleStatusDropdown()" id="status-filter-btn" class="flex items-center justify-between min-w-[200px] bg-slate-50 hover:bg-slate-100 rounded-xl px-4 py-2.5 border border-slate-200 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
+                    <button onclick="window.App.toggleStatusDropdown()" id="status-filter-btn" class="flex items-center justify-between min-w-[200px] bg-slate-50 hover:bg-slate-100 rounded-xl px-4 py-2.5 border border-slate-200 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
                         <div class="flex items-center">
                             <i data-lucide="filter" class="h-4 w-4 text-slate-400 mr-2"></i>
                             <span class="mr-2">Status:</span>
@@ -282,26 +271,25 @@
                         <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400"></i>
                     </button>
                     
-                    <!-- Dropdown Menu -->
                     <div id="status-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden">
                         <div class="py-1">
-                            <button onclick="App.setFilter('status', 'Todos')" class="w-full text-left px-4 py-2.5 text-sm flex items-center hover:bg-slate-50 text-slate-700">
+                            <button onclick="window.App.setFilter('status', 'Todos')" class="w-full text-left px-4 py-2.5 text-sm flex items-center hover:bg-slate-50 text-slate-700">
                                 <span class="w-2 h-2 rounded-full bg-slate-300 mr-3"></span> Todos os Status
                             </button>
                             <div class="border-t border-slate-50 my-1"></div>
-                            <button onclick="App.setFilter('status', 'Disponível')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
+                            <button onclick="window.App.setFilter('status', 'Disponível')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
                                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-3 shadow-sm"></span> Disponível
                             </button>
-                            <button onclick="App.setFilter('status', 'Em processo de locação')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
+                            <button onclick="window.App.setFilter('status', 'Em processo de locação')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
                                 <span class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-3 shadow-sm"></span> Em processo de locação
                             </button>
-                            <button onclick="App.setFilter('status', 'Desocupando')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
+                            <button onclick="window.App.setFilter('status', 'Desocupando')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
                                 <span class="w-2.5 h-2.5 rounded-full bg-purple-500 mr-3 shadow-sm"></span> Desocupando
                             </button>
-                            <button onclick="App.setFilter('status', 'Locado')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
+                            <button onclick="window.App.setFilter('status', 'Locado')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
                                 <span class="w-2.5 h-2.5 rounded-full bg-red-500 mr-3 shadow-sm"></span> Locado
                             </button>
-                            <button onclick="App.setFilter('status', 'Suspenso')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
+                            <button onclick="window.App.setFilter('status', 'Suspenso')" class="w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 text-slate-700">
                                 <span class="w-2.5 h-2.5 rounded-full bg-slate-400 mr-3 shadow-sm"></span> Suspenso
                             </button>
                         </div>
@@ -316,25 +304,22 @@
                 <table class="min-w-full divide-y divide-slate-100">
                     <thead class="bg-slate-50/80">
                         <tr>
-                            <th onclick="App.sortBy('codigo')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Código <i data-lucide="arrow-up-down" class="inline w-3 h-3 ml-1"></i></th>
-                            <th onclick="App.sortBy('endereco')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Endereço</th>
-                            <th onclick="App.sortBy('bairro')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Bairro</th>
-                            <th onclick="App.sortBy('tipo')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Tipo</th>
-                            <th onclick="App.sortBy('valor')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Valor</th>
+                            <th onclick="window.App.sortBy('codigo')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Código <i data-lucide="arrow-up-down" class="inline w-3 h-3 ml-1"></i></th>
+                            <th onclick="window.App.sortBy('endereco')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Endereço</th>
+                            <th onclick="window.App.sortBy('bairro')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Bairro</th>
+                            <th onclick="window.App.sortBy('tipo')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Tipo</th>
+                            <th onclick="window.App.sortBy('valor')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Valor</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Descrição</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Obs</th>
-                            <th onclick="App.sortBy('status')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Status</th>
-                            <th onclick="App.sortBy('fichaStatus')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Ficha</th>
-                            <th onclick="App.sortBy('dataAtualizacao')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Atualização</th>
+                            <th onclick="window.App.sortBy('status')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Status</th>
+                            <th onclick="window.App.sortBy('fichaStatus')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Ficha</th>
+                            <th onclick="window.App.sortBy('dataAtualizacao')" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Atualização</th>
                             <th class="px-6 py-4"></th>
                         </tr>
                     </thead>
-                    <tbody id="properties-table-body" class="bg-white divide-y divide-slate-50">
-                        <!-- Rows injected by JS -->
-                    </tbody>
+                    <tbody id="properties-table-body" class="bg-white divide-y divide-slate-50"></tbody>
                 </table>
             </div>
-            <!-- Empty State (Hidden by default) -->
             <div id="empty-state" class="hidden px-6 py-16 text-center text-slate-400">
                  <div class="flex flex-col items-center justify-center">
                     <i data-lucide="search" class="w-12 h-12 mb-4 text-slate-200"></i>
@@ -354,13 +339,13 @@
                      </div>
                      <h1 id="form-title" class="text-2xl font-bold text-slate-900 tracking-tight">Cadastrar Novo Imóvel</h1>
                 </div>
-                <button onclick="App.navigateTo('dashboard')" class="flex items-center text-slate-600 hover:text-emerald-800 hover:bg-white transition-all font-medium text-sm bg-slate-50 px-4 py-2 rounded-lg shadow-sm border border-slate-200">
+                <button onclick="window.App.navigateTo('dashboard')" class="flex items-center text-slate-600 hover:text-emerald-800 hover:bg-white transition-all font-medium text-sm bg-slate-50 px-4 py-2 rounded-lg shadow-sm border border-slate-200">
                 <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
                 Voltar para lista
                 </button>
             </div>
 
-            <form id="property-form" onsubmit="App.handleFormSubmit(event)" class="bg-white shadow-xl shadow-slate-200/60 rounded-2xl overflow-hidden border border-slate-100">
+            <form id="property-form" onsubmit="window.App.handleFormSubmit(event)" class="bg-white shadow-xl shadow-slate-200/60 rounded-2xl overflow-hidden border border-slate-100">
                 <input type="hidden" id="form-id" />
                 <div class="p-8 space-y-10">
                 
@@ -473,19 +458,25 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        /**
-         * APPLICATION LOGIC (Vanilla JS)
-         * Replaces React/Firebase with local browser storage logic.
-         */
+    <!-- FIREBASE & LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const StorageKey = 'varp_imoveis_db_v1';
+        // FIREBASE CONFIGURATION
+        const firebaseConfig = {
+          apiKey: "AIzaSyBg8yP8TQrT6m34EGlkExa5yhou4833U80",
+          authDomain: "tabela-de-aluguel.firebaseapp.com",
+          projectId: "tabela-de-aluguel",
+          storageBucket: "tabela-de-aluguel.firebasestorage.app",
+          messagingSenderId: "1083451634894",
+          appId: "1:1083451634894:web:655c0791b3cd57751c8c9f"
+        };
 
-        // Initial Data Generator (for first run)
-        const getInitialData = () => [];
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        // Main App Object
+        // --- APPLICATION LOGIC ---
         const App = {
             data: [],
             filter: {
@@ -496,63 +487,53 @@
                 sortDesc: true
             },
             
-            // --- Initialization ---
             init: function() {
-                this.loadData();
-                this.render();
+                this.setupRealtimeListener();
                 
-                // Close dropdowns on outside click
+                // Event Listeners
                 document.addEventListener('click', (e) => {
                     const dropdown = document.getElementById('status-dropdown');
                     const btn = document.getElementById('status-filter-btn');
                     if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
                         dropdown.classList.add('hidden');
                     }
-                    
-                    // Close action menus
                     if (!e.target.closest('.action-menu-trigger') && !e.target.closest('.action-menu')) {
                         document.querySelectorAll('.action-menu').forEach(el => el.classList.add('hidden'));
                     }
                 });
             },
 
-            loadData: function() {
-                const stored = localStorage.getItem(StorageKey);
-                if (stored) {
-                    this.data = JSON.parse(stored);
-                } else {
-                    this.data = getInitialData();
-                    this.saveData();
-                }
+            setupRealtimeListener: function() {
+                const q = query(collection(db, 'imoveis'), orderBy('dataAtualizacao', 'desc'));
+                onSnapshot(q, (snapshot) => {
+                    this.data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    document.getElementById('loading-indicator').classList.add('hidden');
+                    this.render();
+                }, (error) => {
+                    console.error("Firebase Error:", error);
+                    if (error.code === 'permission-denied') {
+                         alert("🚨 ACESSO NEGADO PELO FIREBASE 🚨\n\nO banco de dados recusou a conexão.\n\nCOMO RESOLVER:\n1. Vá ao Console do Firebase > Firestore Database > Regras.\n2. Altere para: allow read, write: if true;\n3. Publique.");
+                    }
+                });
             },
 
-            saveData: function() {
-                localStorage.setItem(StorageKey, JSON.stringify(this.data));
-                this.render();
-            },
-
-            // --- Navigation ---
+            // Navigation
             navigateTo: function(view, id = null) {
-                // Toggle Views
                 document.getElementById('view-dashboard').classList.add('hidden');
                 document.getElementById('view-form').classList.add('hidden');
                 
                 if (view === 'dashboard') {
                     document.getElementById('view-dashboard').classList.remove('hidden');
-                    // Refresh dash
                     this.render(); 
                 } else if (view === 'form') {
                     document.getElementById('view-form').classList.remove('hidden');
                     this.resetForm();
-                    if (id) {
-                        this.loadForm(id);
-                    }
+                    if (id) this.loadForm(id);
                 }
-                // Refresh Icons
                 lucide.createIcons();
             },
 
-            // --- Form Handling ---
+            // Form Handling
             resetForm: function() {
                 document.getElementById('property-form').reset();
                 document.getElementById('form-id').value = '';
@@ -568,26 +549,19 @@
                 
                 const fields = ['codigo', 'endereco', 'bairro', 'tipo', 'valor', 'descricao', 'observacao', 'status', 'captador', 'fichaStatus'];
                 fields.forEach(f => {
-                    if (document.getElementById(`form-${f}`)) {
-                        document.getElementById(`form-${f}`).value = item[f] || '';
-                    }
+                    if (document.getElementById(`form-${f}`)) document.getElementById(`form-${f}`).value = item[f] || '';
                 });
 
-                if (item.vagoEm) {
-                    document.getElementById('form-vagoEm').value = new Date(item.vagoEm).toISOString().split('T')[0];
-                }
-                if (item.liberadoEm) {
-                    document.getElementById('form-liberadoEm').value = new Date(item.liberadoEm).toISOString().split('T')[0];
-                }
+                if (item.vagoEm) document.getElementById('form-vagoEm').value = new Date(item.vagoEm).toISOString().split('T')[0];
+                if (item.liberadoEm) document.getElementById('form-liberadoEm').value = new Date(item.liberadoEm).toISOString().split('T')[0];
             },
 
-            handleFormSubmit: function(e) {
+            handleFormSubmit: async function(e) {
                 e.preventDefault();
                 const id = document.getElementById('form-id').value;
                 const isNew = !id;
 
                 const formData = {
-                    id: id || Math.random().toString(36).substr(2, 9),
                     codigo: document.getElementById('form-codigo').value,
                     endereco: document.getElementById('form-endereco').value,
                     bairro: document.getElementById('form-bairro').value,
@@ -601,98 +575,59 @@
                     dataAtualizacao: Date.now()
                 };
 
-                // Date handling
                 const vagoEmVal = document.getElementById('form-vagoEm').value;
                 if (vagoEmVal) formData.vagoEm = new Date(vagoEmVal).getTime() + 86400000/2;
                 
                 const liberadoEmVal = document.getElementById('form-liberadoEm').value;
                 if (liberadoEmVal) formData.liberadoEm = new Date(liberadoEmVal).getTime() + 86400000/2;
 
-                if (isNew) {
-                    this.data.unshift(formData);
-                } else {
-                    const idx = this.data.findIndex(p => p.id === id);
-                    if (idx !== -1) this.data[idx] = { ...this.data[idx], ...formData };
+                try {
+                    if (isNew) {
+                        await addDoc(collection(db, 'imoveis'), formData);
+                    } else {
+                        await updateDoc(doc(db, 'imoveis', id), formData);
+                    }
+                    this.navigateTo('dashboard');
+                    alert(isNew ? 'Imóvel cadastrado!' : 'Imóvel atualizado!');
+                } catch (err) {
+                    console.error(err);
+                    alert("Erro ao salvar. Verifique o console.");
                 }
-
-                this.saveData();
-                this.navigateTo('dashboard');
-                alert(isNew ? 'Imóvel cadastrado com sucesso!' : 'Imóvel atualizado com sucesso!');
             },
 
-            // --- Dashboard Actions ---
-            deleteProperty: function(id) {
+            // Actions
+            deleteProperty: async function(id) {
                 if (confirm('Tem certeza que deseja excluir este imóvel?')) {
-                    this.data = this.data.filter(p => p.id !== id);
-                    this.saveData();
+                    await deleteDoc(doc(db, 'imoveis', id));
                 }
             },
 
-            quickUpdateStatus: function(id, status) {
-                const idx = this.data.findIndex(p => p.id === id);
-                if (idx !== -1) {
-                    this.data[idx].status = status;
-                    this.data[idx].dataAtualizacao = Date.now();
-                    this.saveData();
-                }
+            quickUpdateStatus: async function(id, status) {
+                await updateDoc(doc(db, 'imoveis', id), { status: status, dataAtualizacao: Date.now() });
             },
 
-            quickUpdateFicha: function(id, status) {
-                const idx = this.data.findIndex(p => p.id === id);
-                if (idx !== -1) {
-                    this.data[idx].fichaStatus = status;
-                    this.data[idx].dataAtualizacao = Date.now();
-                    this.saveData();
-                    if(status === 'Aprovada') alert('Ficha Aprovada!');
-                }
+            quickUpdateFicha: async function(id, status) {
+                await updateDoc(doc(db, 'imoveis', id), { fichaStatus: status, dataAtualizacao: Date.now() });
+                if(status === 'Aprovada') alert('Ficha Aprovada!');
             },
 
-            // --- Filtering & Sorting ---
-            handleSearch: function(val) {
-                this.filter.search = val;
-                this.render();
-            },
-
-            clearSearch: function() {
-                this.filter.search = '';
-                document.getElementById('search-input').value = '';
-                this.render();
-            },
-
-            toggleStatusDropdown: function() {
-                document.getElementById('status-dropdown').classList.toggle('hidden');
-            },
-
-            setFilter: function(key, val) {
-                this.filter[key] = val;
-                this.render();
-            },
-
-            resetFilters: function() {
-                this.filter.status = 'Todos';
-                this.filter.category = 'Todos';
-                this.filter.search = '';
-                document.getElementById('search-input').value = '';
-                this.render();
-            },
-
+            // Filtering
+            handleSearch: function(val) { this.filter.search = val; this.render(); },
+            clearSearch: function() { this.filter.search = ''; document.getElementById('search-input').value = ''; this.render(); },
+            toggleStatusDropdown: function() { document.getElementById('status-dropdown').classList.toggle('hidden'); },
+            setFilter: function(key, val) { this.filter[key] = val; this.render(); },
+            resetFilters: function() { this.filter.status = 'Todos'; this.filter.search = ''; document.getElementById('search-input').value = ''; this.render(); },
             sortBy: function(field) {
-                if (this.filter.sortBy === field) {
-                    this.filter.sortDesc = !this.filter.sortDesc;
-                } else {
-                    this.filter.sortBy = field;
-                    this.filter.sortDesc = true;
-                }
+                if (this.filter.sortBy === field) this.filter.sortDesc = !this.filter.sortDesc;
+                else { this.filter.sortBy = field; this.filter.sortDesc = true; }
                 this.render();
             },
 
-            // --- Rendering ---
+            // Rendering
             getFilteredData: function() {
                 let res = this.data.filter(p => {
-                    // Search Logic (Multi-term)
                     const searchLower = this.filter.search.toLowerCase();
                     const terms = searchLower.split(/\s+/).filter(t => t.length > 0);
-                    
                     const matchesSearch = terms.length === 0 || terms.every(term => {
                         return (
                             p.codigo.toLowerCase().includes(term) ||
@@ -703,85 +638,52 @@
                             (p.observacao && p.observacao.toLowerCase().includes(term))
                         );
                     });
-
-                    // Status Logic
                     const matchesStatus = this.filter.status === 'Todos' || p.status === this.filter.status;
-                    
                     return matchesSearch && matchesStatus;
                 });
 
-                // Sorting
                 const field = this.filter.sortBy;
                 const dir = this.filter.sortDesc ? -1 : 1;
-                
                 res.sort((a, b) => {
-                    if (a[field] < b[field]) return -1 * dir;
-                    if (a[field] > b[field]) return 1 * dir;
+                    const valA = a[field] || ''; 
+                    const valB = b[field] || '';
+                    if (valA < valB) return -1 * dir;
+                    if (valA > valB) return 1 * dir;
                     return 0;
                 });
-
                 return res;
             },
 
             render: function() {
                 const filtered = this.getFilteredData();
-                this.renderStats(this.data); // Stats based on ALL data or Filtered? Usually all data is better for dashboard
+                this.renderStats(this.data);
                 this.renderTable(filtered);
                 this.renderUIState();
                 lucide.createIcons();
             },
 
             renderUIState: function() {
-                // Update Status Filter Label
                 document.getElementById('status-label').innerText = this.filter.status;
-                const statusColors = {
-                    'Todos': 'bg-slate-300',
-                    'Disponível': 'bg-emerald-500',
-                    'Em processo de locação': 'bg-amber-500',
-                    'Desocupando': 'bg-purple-500',
-                    'Locado': 'bg-red-500',
-                    'Suspenso': 'bg-slate-400'
-                };
-                const indicator = document.getElementById('status-indicator');
-                indicator.className = `w-2 h-2 rounded-full mr-2 ${statusColors[this.filter.status] || 'bg-slate-300'}`;
-
-                // Cards Active State
-                const cards = ['card-receita-ativa', 'card-receita-potencial', 'card-total', 'card-status-disponivel', 'card-status-processo', 'card-status-desocupando', 'card-status-suspenso', 'card-status-locado'];
-                cards.forEach(id => document.getElementById(id).classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-1'));
+                const statusColors = { 'Todos': 'bg-slate-300', 'Disponível': 'bg-emerald-500', 'Em processo de locação': 'bg-amber-500', 'Desocupando': 'bg-purple-500', 'Locado': 'bg-red-500', 'Suspenso': 'bg-slate-400' };
+                document.getElementById('status-indicator').className = `w-2 h-2 rounded-full mr-2 ${statusColors[this.filter.status] || 'bg-slate-300'}`;
                 
-                // Map filter status to card id
-                const map = {
-                    'Disponível': 'card-status-disponivel',
-                    'Locado': 'card-status-locado',
-                    'Desocupando': 'card-status-desocupando',
-                    'Em processo de locação': 'card-status-processo',
-                    'Suspenso': 'card-status-suspenso'
-                };
+                ['card-receita-ativa', 'card-receita-potencial', 'card-total', 'card-status-disponivel', 'card-status-processo', 'card-status-desocupando', 'card-status-suspenso', 'card-status-locado'].forEach(id => document.getElementById(id).classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-1'));
+                
+                const map = { 'Disponível': 'card-status-disponivel', 'Locado': 'card-status-locado', 'Desocupando': 'card-status-desocupando', 'Em processo de locação': 'card-status-processo', 'Suspenso': 'card-status-suspenso' };
+                if (this.filter.status === 'Todos') document.getElementById('card-total').classList.add('ring-2', 'ring-emerald-500', 'ring-offset-1');
+                else if (map[this.filter.status]) document.getElementById(map[this.filter.status]).classList.add('ring-2', 'ring-emerald-500', 'ring-offset-1');
 
-                if (this.filter.status === 'Todos') {
-                    document.getElementById('card-total').classList.add('ring-2', 'ring-emerald-500', 'ring-offset-1');
-                } else if (map[this.filter.status]) {
-                    document.getElementById(map[this.filter.status]).classList.add('ring-2', 'ring-emerald-500', 'ring-offset-1');
-                }
-
-                // Search feedback
                 const feedback = document.getElementById('search-feedback');
-                const count = document.getElementById('search-count');
                 if (this.filter.search) {
                     feedback.classList.remove('hidden');
-                    count.innerText = this.getFilteredData().length;
+                    document.getElementById('search-count').innerText = this.getFilteredData().length;
                 } else {
                     feedback.classList.add('hidden');
                 }
             },
 
             renderStats: function(data) {
-                const stats = {
-                    total: 0, residencial: 0, comercial: 0,
-                    disponivel: 0, emProcesso: 0, desocupando: 0, suspenso: 0, locado: 0,
-                    receitaMensal: 0, potencialReceita: 0
-                };
-
+                const stats = { total: 0, residencial: 0, comercial: 0, disponivel: 0, emProcesso: 0, desocupando: 0, suspenso: 0, locado: 0, receitaMensal: 0, potencialReceita: 0 };
                 const CATEGORIA_RESIDENCIAL = ['Casa', 'Apartamento', 'Kitnet'];
                 const CATEGORIA_COMERCIAL = ['Sala', 'Loja', 'Comercial', 'Garagem'];
 
@@ -790,7 +692,6 @@
                     const val = Number(p.valor) || 0;
                     if (CATEGORIA_RESIDENCIAL.includes(p.tipo)) stats.residencial++;
                     if (CATEGORIA_COMERCIAL.includes(p.tipo)) stats.comercial++;
-
                     if (p.status === 'Disponível') { stats.disponivel++; stats.potencialReceita += val; }
                     if (p.status === 'Em processo de locação') { stats.emProcesso++; stats.potencialReceita += val; }
                     if (p.status === 'Desocupando') { stats.desocupando++; stats.receitaMensal += val; }
@@ -798,15 +699,12 @@
                     if (p.status === 'Locado') { stats.locado++; stats.receitaMensal += val; }
                 });
 
-                // Update DOM
                 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
-                
                 document.getElementById('stat-receita-ativa').innerText = fmt(stats.receitaMensal);
                 document.getElementById('stat-receita-potencial').innerText = fmt(stats.potencialReceita);
                 document.getElementById('stat-total').innerText = stats.total;
                 document.getElementById('stat-total-sub').innerText = `${stats.residencial} Res. | ${stats.comercial} Com.`;
                 document.getElementById('stat-ocupacao').innerText = stats.total > 0 ? Math.round(((stats.locado + stats.desocupando) / stats.total) * 100) + '%' : '0%';
-                
                 document.getElementById('stat-disponivel').innerText = stats.disponivel;
                 document.getElementById('stat-processo').innerText = stats.emProcesso;
                 document.getElementById('stat-desocupando').innerText = stats.desocupando;
@@ -816,31 +714,20 @@
 
             renderTable: function(properties) {
                 const tbody = document.getElementById('properties-table-body');
-                const emptyState = document.getElementById('empty-state');
-                
                 tbody.innerHTML = '';
-                
                 if (properties.length === 0) {
-                    emptyState.classList.remove('hidden');
+                    document.getElementById('empty-state').classList.remove('hidden');
                     return;
                 }
-                emptyState.classList.add('hidden');
+                document.getElementById('empty-state').classList.add('hidden');
 
                 properties.forEach(p => {
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-emerald-50/30 transition-colors group border-b border-slate-50 last:border-0";
                     
-                    // Helpers
                     const fmtVal = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
                     const fmtDate = (d) => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(d));
-                    
-                    const statusStyles = {
-                        'Disponível': 'bg-emerald-100 text-emerald-800 ring-emerald-600/20',
-                        'Em processo de locação': 'bg-amber-100 text-amber-800 ring-amber-600/20',
-                        'Desocupando': 'bg-purple-100 text-purple-800 ring-purple-600/20',
-                        'Suspenso': 'bg-slate-100 text-slate-600 ring-slate-500/10',
-                        'Locado': 'bg-red-50 text-red-700 ring-red-600/10',
-                    };
+                    const statusStyles = { 'Disponível': 'bg-emerald-100 text-emerald-800 ring-emerald-600/20', 'Em processo de locação': 'bg-amber-100 text-amber-800 ring-amber-600/20', 'Desocupando': 'bg-purple-100 text-purple-800 ring-purple-600/20', 'Suspenso': 'bg-slate-100 text-slate-600 ring-slate-500/10', 'Locado': 'bg-red-50 text-red-700 ring-red-600/10' };
 
                     let fichaBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border bg-slate-100 text-slate-500 border-slate-200">Sem ficha</span>`;
                     if (p.fichaStatus === 'Em andamento') fichaBadge = `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">Em andamento</span>`;
@@ -854,36 +741,25 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-emerald-800 font-bold bg-emerald-50/50 rounded-lg">${fmtVal(p.valor)}</td>
                         <td class="px-6 py-4 text-sm text-slate-500 min-w-[200px] max-w-[300px] truncate" title="${p.descricao}">${p.descricao}</td>
                         <td class="px-6 py-4 text-sm text-slate-500 max-w-[150px] truncate" title="${p.observacao || ''}">${p.observacao || '-'}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ring-1 ring-inset ${statusStyles[p.status]} shadow-sm">${p.status}</span>
-                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ring-1 ring-inset ${statusStyles[p.status]} shadow-sm">${p.status}</span></td>
                         <td class="px-6 py-4 whitespace-nowrap">${fichaBadge}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-400 font-medium">${fmtDate(p.dataAtualizacao)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                            <button onclick="App.toggleActionMenu('${p.id}')" class="action-menu-trigger p-2 rounded-full text-slate-300 hover:text-emerald-600 hover:bg-slate-50 transition-colors">
-                                <i data-lucide="more-horizontal" class="w-5 h-5 pointer-events-none"></i>
-                            </button>
-                            <!-- Dropdown -->
+                            <button onclick="window.App.toggleActionMenu('${p.id}')" class="action-menu-trigger p-2 rounded-full text-slate-300 hover:text-emerald-600 hover:bg-slate-50 transition-colors"><i data-lucide="more-horizontal" class="w-5 h-5 pointer-events-none"></i></button>
                             <div id="action-menu-${p.id}" class="action-menu hidden absolute right-0 mt-2 w-56 rounded-xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-20 overflow-hidden text-left">
                                 <div class="py-1">
-                                    <button onclick="App.navigateTo('form', '${p.id}')" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-700 flex items-center">
-                                        <i data-lucide="edit" class="mr-3 h-4 w-4"></i> Editar Imóvel
-                                    </button>
+                                    <button onclick="window.App.navigateTo('form', '${p.id}')" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-700 flex items-center"><i data-lucide="edit" class="mr-3 h-4 w-4"></i> Editar Imóvel</button>
                                     <div class="border-t border-slate-100 my-1"></div>
                                     <span class="block px-4 py-1.5 text-[10px] text-slate-400 uppercase tracking-wider font-bold">Situação da Ficha</span>
-                                    <button onclick="App.quickUpdateFicha('${p.id}', 'Em andamento')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="file-text" class="w-4 h-4 mr-2 text-amber-500"></i> Em Análise</button>
-                                    <button onclick="App.quickUpdateFicha('${p.id}', 'Aprovada')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="clipboard-check" class="w-4 h-4 mr-2 text-emerald-500"></i> Aprovada</button>
-                                    
+                                    <button onclick="window.App.quickUpdateFicha('${p.id}', 'Em andamento')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="file-text" class="w-4 h-4 mr-2 text-amber-500"></i> Em Análise</button>
+                                    <button onclick="window.App.quickUpdateFicha('${p.id}', 'Aprovada')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="clipboard-check" class="w-4 h-4 mr-2 text-emerald-500"></i> Aprovada</button>
                                     <div class="border-t border-slate-100 my-1"></div>
                                     <span class="block px-4 py-1.5 text-[10px] text-slate-400 uppercase tracking-wider font-bold">Alterar Status</span>
-                                    <button onclick="App.quickUpdateStatus('${p.id}', 'Disponível')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="check-circle" class="w-4 h-4 mr-2 text-emerald-600"></i> Disponível</button>
-                                    <button onclick="App.quickUpdateStatus('${p.id}', 'Locado')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="building-2" class="w-4 h-4 mr-2 text-red-500"></i> Locado</button>
-                                    <button onclick="App.quickUpdateStatus('${p.id}', 'Desocupando')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="log-out" class="w-4 h-4 mr-2 text-purple-500"></i> Desocupando</button>
-                                    
+                                    <button onclick="window.App.quickUpdateStatus('${p.id}', 'Disponível')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="check-circle" class="w-4 h-4 mr-2 text-emerald-600"></i> Disponível</button>
+                                    <button onclick="window.App.quickUpdateStatus('${p.id}', 'Locado')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="building-2" class="w-4 h-4 mr-2 text-red-500"></i> Locado</button>
+                                    <button onclick="window.App.quickUpdateStatus('${p.id}', 'Desocupando')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"><i data-lucide="log-out" class="w-4 h-4 mr-2 text-purple-500"></i> Desocupando</button>
                                     <div class="border-t border-slate-100 my-1"></div>
-                                    <button onclick="App.deleteProperty('${p.id}')" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center">
-                                        <i data-lucide="trash-2" class="mr-3 h-4 w-4"></i> Excluir
-                                    </button>
+                                    <button onclick="window.App.deleteProperty('${p.id}')" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center"><i data-lucide="trash-2" class="mr-3 h-4 w-4"></i> Excluir</button>
                                 </div>
                             </div>
                         </td>
@@ -893,37 +769,27 @@
             },
 
             toggleActionMenu: function(id) {
-                // Close others
-                document.querySelectorAll('.action-menu').forEach(el => {
-                    if (el.id !== `action-menu-${id}`) el.classList.add('hidden');
-                });
-                const menu = document.getElementById(`action-menu-${id}`);
-                menu.classList.toggle('hidden');
+                document.querySelectorAll('.action-menu').forEach(el => { if (el.id !== `action-menu-${id}`) el.classList.add('hidden'); });
+                document.getElementById(`action-menu-${id}`).classList.toggle('hidden');
             },
 
-            // --- Utilities ---
             restoreDefaults: function() {
-                if (confirm('Deseja restaurar os dados de exemplo? (Isso apagará seus dados atuais)')) {
-                    const mock = [
-                        {id: '1', codigo: 'AP-101', endereco: 'Rua das Flores, 123', bairro: 'Centro', tipo: 'Apartamento', valor: 2500, status: 'Disponível', dataAtualizacao: Date.now(), descricao: 'Lindo ap', captador: 'João'},
-                        {id: '2', codigo: 'CS-202', endereco: 'Av. Paulista, 900', bairro: 'Jardins', tipo: 'Casa', valor: 5500, status: 'Locado', dataAtualizacao: Date.now() - 1000000, descricao: 'Casa grande', captador: 'Maria'}
-                    ];
-                    this.data = mock;
-                    this.saveData();
-                }
+                alert("Esta função está desabilitada no modo Banco de Dados Real para proteger suas informações.");
             },
 
-            clearAll: function() {
-                if (confirm('ATENÇÃO: Isso apagará TODOS os imóveis. Continuar?')) {
-                    this.data = [];
-                    this.saveData();
+            clearAll: async function() {
+                if (confirm('ATENÇÃO: Isso apagará TODOS os imóveis do banco de dados. Continuar?')) {
+                    const q = query(collection(db, 'imoveis'));
+                    const snapshot = await getDocs(q);
+                    const batch = writeBatch(db);
+                    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+                    await batch.commit();
                 }
             },
 
             exportCSV: function() {
                 const filtered = this.getFilteredData();
                 if (!filtered.length) return alert('Nada para exportar');
-                
                 const headers = ["Código", "Endereço", "Bairro", "Tipo", "Valor", "Descrição", "Observação", "Status", "Ficha", "Captador", "Data Atualização"];
                 const rows = filtered.map(p => [
                     p.codigo, p.endereco, p.bairro, p.tipo, p.valor.toString().replace('.', ','),
@@ -941,6 +807,9 @@
                 link.click();
             }
         };
+
+        // Expose App to global window for HTML onclick events
+        window.App = App;
 
         // Start App
         document.addEventListener('DOMContentLoaded', () => {
