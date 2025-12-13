@@ -9,12 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
     "firebase": "^12.6.0",
-    "lucide-react": "^0.555.0",
-    "react-router-dom": "^7.10.0",
-    "react-hook-form": "^7.67.0"
+    "react-router-dom": "^7.10.1",
+    "react-dom": "^19.2.3",
+    "react": "^19.2.3",
+    "lucide-react": "^0.561.0",
+    "react-hook-form": "^7.68.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
