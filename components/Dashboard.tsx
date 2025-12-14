@@ -4,7 +4,7 @@ import {
   Plus, Search, Filter, ArrowUpDown, MoreHorizontal, 
   Edit, Trash2, CheckCircle, Clock, PauseCircle, LogOut,
   FileText, ClipboardCheck, RotateCcw, Download, Building2, Key, ChevronDown, Home, Briefcase,
-  DollarSign, TrendingUp, X
+  DollarSign, TrendingUp, X, MapPin
 } from 'lucide-react';
 import { propertyService } from '../services/propertyService';
 import { Imovel, PropertyStatus, DashboardStats, FichaStatus } from '../types';
@@ -30,17 +30,17 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, subValue, icon, color
   return (
     <div 
       onClick={onClick}
-      className={`relative p-4 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md ${isActive ? 'ring-2 ring-emerald-500 ring-offset-1' : ''} ${bgClass} ${highlight ? 'shadow-sm' : ''}`}
+      className={`relative p-3 rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-md ${isActive ? 'ring-2 ring-emerald-500 ring-offset-1' : ''} ${bgClass} ${highlight ? 'shadow-sm' : ''}`}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-bold uppercase tracking-wider ${isActive ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-700'}`}>{label}</span>
-        <div className={`p-1.5 rounded-lg ${isActive ? 'bg-white shadow-sm' : 'bg-slate-50 group-hover:bg-white group-hover:shadow-sm'} transition-all ${colorClass}`}>
+      <div className="flex items-center justify-between mb-1">
+        <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-slate-800' : 'text-slate-500 group-hover:text-slate-700'}`}>{label}</span>
+        <div className={`p-1 rounded-lg ${isActive ? 'bg-white shadow-sm' : 'bg-slate-50 group-hover:bg-white group-hover:shadow-sm'} transition-all ${colorClass}`}>
           {icon}
         </div>
       </div>
       <div className="flex flex-col">
-        <span className={`text-2xl font-bold tracking-tight ${colorClass}`}>{value}</span>
-        {subValue && <span className="text-[10px] text-slate-400 font-medium">{subValue}</span>}
+        <span className={`text-lg font-bold tracking-tight ${colorClass}`}>{value}</span>
+        {subValue && <span className="text-[9px] text-slate-400 font-medium">{subValue}</span>}
       </div>
     </div>
   );
@@ -52,13 +52,14 @@ interface SortableHeaderProps {
   currentSort: keyof Imovel;
   currentDirection: 'asc' | 'desc';
   onSort: (field: keyof Imovel) => void;
+  className?: string;
 }
 
-const SortableHeader: React.FC<SortableHeaderProps> = ({ label, field, currentSort, currentDirection, onSort }) => {
+const SortableHeader: React.FC<SortableHeaderProps> = ({ label, field, currentSort, currentDirection, onSort, className }) => {
   return (
     <th 
       scope="col" 
-      className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100/50 hover:text-emerald-700 transition-colors group select-none"
+      className={`px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100/50 hover:text-emerald-700 transition-colors group select-none ${className || ''}`}
       onClick={() => onSort(field)}
     >
       <div className="flex items-center gap-1">
@@ -99,6 +100,7 @@ export const Dashboard: React.FC = () => {
   // Filtering States
   const [statusFilter, setStatusFilter] = useState<string>('Todos');
   const [categoryFilter, setCategoryFilter] = useState<string>('Todos');
+  const [bairroFilter, setBairroFilter] = useState<string>('');
 
   const [sortField, setSortField] = useState<keyof Imovel>('dataAtualizacao');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -185,8 +187,11 @@ export const Dashboard: React.FC = () => {
         } else if (categoryFilter === 'Comercial') {
             matchesCategory = CATEGORIA_COMERCIAL.includes(p.tipo);
         }
+        
+        // Bairro Filter
+        const matchesBairro = p.bairro.toLowerCase().includes(bairroFilter.toLowerCase());
 
-        return matchesSearch && matchesStatus && matchesCategory;
+        return matchesSearch && matchesStatus && matchesCategory && matchesBairro;
       })
       .sort((a, b) => {
         const aValue = a[sortField];
@@ -201,7 +206,7 @@ export const Dashboard: React.FC = () => {
         if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [properties, searchTerm, statusFilter, categoryFilter, sortField, sortDirection]);
+  }, [properties, searchTerm, statusFilter, categoryFilter, sortField, sortDirection, bairroFilter]);
 
   // Actions
   const handleSort = (field: keyof Imovel) => {
@@ -350,10 +355,6 @@ export const Dashboard: React.FC = () => {
     );
   };
 
-  const renderDescriptionCell = (property: Imovel) => {
-    return <span className="whitespace-pre-wrap text-slate-600">{property.descricao || ''}</span>;
-  };
-
   // Status Colors for the Filter Dropdown
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -381,68 +382,82 @@ export const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-slate-50 pb-20 font-sans">
       {/* Header - FULL WIDTH */}
       <header className="bg-white border-t-4 border-t-emerald-900 border-b border-b-slate-200 shadow-sm sticky top-0 z-20">
-        <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Logotype */}
-            <div className="flex flex-col items-start justify-center cursor-pointer" onClick={() => { setStatusFilter('Todos'); setCategoryFilter('Todos'); setSearchTerm(''); navigate('/'); }}>
-                 <div className="text-green-800 font-bold text-2xl tracking-tighter leading-none">
-                  VARP <span className="text-gray-600 text-sm font-normal tracking-normal">Imóveis</span>
+            <div className="flex flex-col items-start justify-center cursor-pointer" onClick={() => { setStatusFilter('Todos'); setCategoryFilter('Todos'); setSearchTerm(''); setBairroFilter(''); navigate('/'); }}>
+                 <div className="text-green-800 font-bold text-xl tracking-tighter leading-none">
+                  VARP <span className="text-gray-600 text-xs font-normal tracking-normal">Imóveis</span>
                  </div>
-                 <div className="text-[10px] text-yellow-600 font-serif italic">Desde 1978</div>
+                 <div className="text-[9px] text-yellow-600 font-serif italic">Desde 1978</div>
             </div>
             
-            <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+            <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block"></div>
             
-            <h1 className="text-lg font-medium text-slate-500 hidden sm:block tracking-tight">
-              Painel de Controle de Locação
+            <h1 className="text-sm font-medium text-slate-500 hidden sm:block tracking-tight">
+              Painel de Locação
             </h1>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-1 mr-2 bg-slate-100 rounded-full p-1">
+          {/* Bairro Filter Input in Header */}
+          <div className="flex-1 max-w-xs mx-4 hidden md:block relative group">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MapPin className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
+              </div>
+              <input 
+                  type="text" 
+                  className="block w-full pl-9 pr-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 focus:bg-white transition-all text-xs font-medium"
+                  placeholder="Filtrar por bairro..."
+                  value={bairroFilter}
+                  onChange={(e) => setBairroFilter(e.target.value)}
+              />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-1 mr-2 bg-slate-100 rounded-full p-0.5">
               <button 
                 onClick={handleExportCSV}
                 title="Exportar CSV"
-                className="p-2 text-slate-500 hover:text-emerald-700 hover:bg-white rounded-full transition-all shadow-sm"
+                className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-white rounded-full transition-all shadow-sm"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3.5 h-3.5" />
               </button>
               <button 
                 onClick={handleRestore}
                 title="Restaurar Padrão"
-                className="p-2 text-slate-500 hover:text-amber-600 hover:bg-white rounded-full transition-all shadow-sm"
+                className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-white rounded-full transition-all shadow-sm"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5" />
               </button>
               <button 
                 onClick={handleClearAll}
                 title="Limpar Tudo"
-                className="p-2 text-slate-500 hover:text-red-600 hover:bg-white rounded-full transition-all shadow-sm"
+                className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-white rounded-full transition-all shadow-sm"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
 
             <button 
               onClick={() => navigate('/novo')}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-emerald-800 hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all transform hover:-translate-y-0.5"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-md text-xs font-bold text-white bg-emerald-800 hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all transform hover:-translate-y-0.5"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Novo Imóvel
+              <Plus className="w-4 h-4 mr-1.5" />
+              Novo
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content - FULL WIDTH */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 mt-8">
+      <main className="w-full px-4 sm:px-6 lg:px-8 mt-6">
         
         {/* Financial & Category Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
              <StatCard 
-                label="Receita Mensal (Ativa)"
+                label="Receita Mensal"
                 value={formatCurrency(stats.receitaMensal)}
-                icon={<DollarSign className="w-5 h-5" />}
+                icon={<DollarSign className="w-4 h-4" />}
                 colorClass="text-emerald-700"
                 bgClass="bg-emerald-50/60 border-emerald-100"
                 onClick={() => toggleStatus('Locado')}
@@ -450,9 +465,9 @@ export const Dashboard: React.FC = () => {
                 highlight={true}
             />
             <StatCard 
-                label="Receita Potencial (Vago)" 
+                label="Receita Potencial" 
                 value={formatCurrency(stats.potencialReceita)}
-                icon={<TrendingUp className="w-5 h-5" />}
+                icon={<TrendingUp className="w-4 h-4" />}
                 colorClass="text-slate-500"
                 bgClass="bg-slate-50 border-slate-200"
                 onClick={() => toggleStatus('Disponível')}
@@ -462,7 +477,7 @@ export const Dashboard: React.FC = () => {
                 label="Total Imóveis" 
                 value={stats.total} 
                 subValue={`${stats.residencial} Res. | ${stats.comercial} Com.`}
-                icon={<Building2 className="w-5 h-5" />}
+                icon={<Building2 className="w-4 h-4" />}
                 colorClass="text-blue-700"
                 bgClass="bg-white border-slate-200"
                 onClick={() => { setCategoryFilter('Todos'); setStatusFilter('Todos'); }}
@@ -471,8 +486,8 @@ export const Dashboard: React.FC = () => {
              <StatCard 
                 label="Ocupação" 
                 value={`${stats.total > 0 ? Math.round(((stats.locado + stats.desocupando) / stats.total) * 100) : 0}%`}
-                subValue="Taxa de ocupação"
-                icon={<Briefcase className="w-5 h-5" />}
+                subValue="Taxa atual"
+                icon={<Briefcase className="w-4 h-4" />}
                 colorClass="text-indigo-600"
                 bgClass="bg-white border-slate-200"
                 onClick={() => {}}
@@ -481,12 +496,11 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Status Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
           <StatCard 
             label="Disponíveis" 
             value={stats.disponivel} 
-            subValue="imóveis vagos"
-            icon={<Key className="w-5 h-5" />}
+            icon={<Key className="w-3.5 h-3.5" />}
             colorClass="text-emerald-600"
             bgClass="bg-white border-emerald-100 ring-1 ring-emerald-50"
             onClick={() => toggleStatus('Disponível')}
@@ -495,8 +509,7 @@ export const Dashboard: React.FC = () => {
           <StatCard 
             label="Em Processo" 
             value={stats.emProcesso} 
-            subValue="fichas em análise"
-            icon={<Clock className="w-5 h-5" />}
+            icon={<Clock className="w-3.5 h-3.5" />}
             colorClass="text-amber-600"
             bgClass="bg-white border-amber-100"
             onClick={() => toggleStatus('Em processo de locação')}
@@ -505,8 +518,7 @@ export const Dashboard: React.FC = () => {
           <StatCard 
             label="Desocupando" 
             value={stats.desocupando} 
-            subValue="aviso prévio"
-            icon={<LogOut className="w-5 h-5" />}
+            icon={<LogOut className="w-3.5 h-3.5" />}
             colorClass="text-purple-600"
             bgClass="bg-white border-purple-100"
             onClick={() => toggleStatus('Desocupando')}
@@ -515,8 +527,7 @@ export const Dashboard: React.FC = () => {
            <StatCard 
             label="Suspensos" 
             value={stats.suspenso} 
-            subValue="reforma/jurídico"
-            icon={<PauseCircle className="w-5 h-5" />}
+            icon={<PauseCircle className="w-3.5 h-3.5" />}
             colorClass="text-slate-500"
             bgClass="bg-slate-50 border-slate-200"
             onClick={() => toggleStatus('Suspenso')}
@@ -525,8 +536,7 @@ export const Dashboard: React.FC = () => {
           <StatCard 
             label="Locados" 
             value={stats.locado} 
-            subValue="contratos ativos"
-            icon={<CheckCircle className="w-5 h-5" />}
+            icon={<CheckCircle className="w-3.5 h-3.5" />}
             colorClass="text-red-500"
             bgClass="bg-white border-red-100"
             onClick={() => toggleStatus('Locado')}
@@ -535,14 +545,14 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Filters and Controls */}
-        <div className="bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 relative z-10">
+        <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 relative z-10">
           <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-slate-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400" />
             </div>
             <input
               type="text"
-              className="block w-full pl-11 pr-16 py-3 rounded-xl border-none bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-colors sm:text-sm font-medium"
+              className="block w-full pl-9 pr-16 py-2 rounded-lg border-none bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-colors text-xs font-medium"
               placeholder="Ex: Centro João (Busca múltipla...)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -550,7 +560,7 @@ export const Dashboard: React.FC = () => {
              {/* Instant Feedback: Result Count & Clear Button */}
              {searchTerm && (
                 <div className="absolute inset-y-0 right-0 pr-2 flex items-center gap-2">
-                    <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-200 shadow-sm animate-in fade-in duration-200">
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm animate-in fade-in duration-200">
                         {filteredProperties.length}
                     </span>
                     <button 
@@ -558,37 +568,37 @@ export const Dashboard: React.FC = () => {
                         className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
                         title="Limpar busca"
                     >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3" />
                     </button>
                 </div>
             )}
           </div>
           
-          <div className="flex items-center gap-2 pr-2">
+          <div className="flex items-center gap-2 pr-1">
             
             {/* Custom Status Dropdown */}
             <div className="relative" ref={filterRef}>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="flex items-center justify-between min-w-[200px] bg-slate-50 hover:bg-slate-100 rounded-xl px-4 py-2.5 border border-slate-200 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                className="flex items-center justify-between min-w-[180px] bg-slate-50 hover:bg-slate-100 rounded-lg px-3 py-2 border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
               >
                 <div className="flex items-center">
-                  <Filter className="h-4 w-4 text-slate-400 mr-2" />
+                  <Filter className="h-3.5 w-3.5 text-slate-400 mr-2" />
                   <span className="mr-2">Status:</span>
                   {statusFilter !== 'Todos' && (
                      <span className={`w-2 h-2 rounded-full mr-2 ${getStatusColor(statusFilter)}`}></span>
                   )}
-                  <span className="text-slate-900 font-semibold truncate max-w-[120px]">{statusFilter === 'Todos' ? 'Todos' : statusFilter}</span>
+                  <span className="text-slate-900 font-semibold truncate max-w-[100px]">{statusFilter === 'Todos' ? 'Todos' : statusFilter}</span>
                 </div>
-                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isFilterOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 ring-1 ring-black ring-opacity-5 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 ring-1 ring-black ring-opacity-5 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                   <div className="py-1">
                     <button 
                       onClick={() => { setStatusFilter('Todos'); setIsFilterOpen(false); }}
-                      className={`w-full text-left px-4 py-2.5 text-sm flex items-center hover:bg-slate-50 ${statusFilter === 'Todos' ? 'bg-slate-50 text-emerald-700 font-medium' : 'text-slate-700'}`}
+                      className={`w-full text-left px-4 py-2 text-xs flex items-center hover:bg-slate-50 ${statusFilter === 'Todos' ? 'bg-slate-50 text-emerald-700 font-medium' : 'text-slate-700'}`}
                     >
                       <span className="w-2 h-2 rounded-full bg-slate-300 mr-3"></span>
                       Todos os Status
@@ -604,7 +614,7 @@ export const Dashboard: React.FC = () => {
                       <button
                         key={option.label}
                         onClick={() => { setStatusFilter(option.label); setIsFilterOpen(false); }}
-                        className={`w-full text-left px-4 py-2 text-sm flex items-center hover:bg-slate-50 ${statusFilter === option.label ? 'bg-emerald-50/50 text-emerald-800 font-medium' : 'text-slate-700'}`}
+                        className={`w-full text-left px-4 py-2 text-xs flex items-center hover:bg-slate-50 ${statusFilter === option.label ? 'bg-emerald-50/50 text-emerald-800 font-medium' : 'text-slate-700'}`}
                       >
                         <span className={`w-2.5 h-2.5 rounded-full ${option.color} mr-3 shadow-sm`}></span>
                         {option.label}
@@ -621,20 +631,20 @@ export const Dashboard: React.FC = () => {
         {/* Data Table - Modernized */}
         <div className="bg-white shadow-lg shadow-slate-200/50 rounded-2xl overflow-hidden border border-slate-100">
           <div className="overflow-x-auto custom-scrollbar">
-            <table className="min-w-full divide-y divide-slate-100">
+            <table className="min-w-full divide-y divide-slate-100 table-fixed">
               <thead className="bg-slate-50/80">
                 <tr>
-                  <SortableHeader label="Código" field="codigo" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Endereço" field="endereco" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Bairro" field="bairro" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Tipo" field="tipo" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Valor" field="valor" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Descrição" field="descricao" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Obs" field="observacao" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Status" field="status" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Ficha" field="fichaStatus" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Atualização" field="dataAtualizacao" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <th scope="col" className="relative px-6 py-4">
+                  <SortableHeader className="w-24 whitespace-nowrap" label="Código" field="codigo" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-32 whitespace-nowrap" label="Bairro" field="bairro" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-24 whitespace-nowrap" label="Tipo" field="tipo" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-48 whitespace-nowrap" label="Descrição" field="descricao" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-32 whitespace-nowrap" label="Obs" field="observacao" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-48 whitespace-nowrap" label="Endereço" field="endereco" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-28 whitespace-nowrap" label="Valor" field="valor" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-28 whitespace-nowrap" label="Ficha" field="fichaStatus" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-28 whitespace-nowrap" label="Status" field="status" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <SortableHeader className="w-32 whitespace-nowrap" label="Atualização" field="dataAtualizacao" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                  <th scope="col" className="relative px-6 py-3 w-16">
                     <span className="sr-only">Ações</span>
                   </th>
                 </tr>
@@ -642,7 +652,7 @@ export const Dashboard: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-50">
                 {properties.length === 0 ? (
                    <tr>
-                    <td colSpan={11} className="px-6 py-16 text-center text-slate-400">
+                    <td colSpan={10} className="px-6 py-16 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center">
                           <Building2 className="w-12 h-12 mb-4 text-slate-200" />
                           <p className="text-lg font-medium">Nenhum imóvel cadastrado</p>
@@ -659,7 +669,7 @@ export const Dashboard: React.FC = () => {
                   </tr>
                 ) : filteredProperties.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="px-6 py-16 text-center text-slate-400">
+                    <td colSpan={10} className="px-6 py-16 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center">
                          <Search className="w-12 h-12 mb-4 text-slate-200" />
                          <p className="text-lg font-medium">Nenhum imóvel encontrado</p>
@@ -671,24 +681,33 @@ export const Dashboard: React.FC = () => {
                   filteredProperties.map((property) => (
                     <tr key={property.id} className="hover:bg-emerald-50/30 transition-colors group">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800 tracking-tight">{property.codigo}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">{property.endereco}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{property.bairro}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">
+                        <div className="block max-w-[12rem] truncate" title={property.bairro}>
+                           {property.bairro || ''}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{property.tipo}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">
+                        <div className="block max-w-[14rem] truncate" title={property.descricao}>
+                           {property.descricao || ''}
+                        </div>
+                      </td>
+                       <td className="px-6 py-4 text-sm text-slate-500">
+                        <div className="block max-w-[10rem] truncate" title={property.observacao}>
+                           {property.observacao || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-500">
+                        <div className="block max-w-[12rem] truncate cursor-help" title={property.endereco}>
+                           {property.endereco || ''}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-800 font-bold bg-emerald-50/50 rounded-lg">{formatCurrencyFull(property.valor)}</td>
-                      
-                      <td className="px-6 py-4 text-sm text-slate-500 min-w-[350px] max-w-[500px]">
-                        {renderDescriptionCell(property)}
-                      </td>
-
-                       <td className="px-6 py-4 text-sm text-slate-500 max-w-[200px] truncate" title={property.observacao}>
-                        {property.observacao || '-'}
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={property.status} />
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {renderFichaBadge(property.fichaStatus)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={property.status} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-400 font-medium">
                         {formatDate(property.dataAtualizacao)}
