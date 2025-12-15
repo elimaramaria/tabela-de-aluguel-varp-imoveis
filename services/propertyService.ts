@@ -64,10 +64,14 @@ const firestoreService: PropertyService = {
     await addDoc(collection(db, 'imoveis'), {
       ...property,
       dataAtualizacao: Date.now(),
+      locador: property.locador || '',
+      iptu: property.iptu || 0,
+      seguroIncendio: property.seguroIncendio || 0,
       observacao: property.observacao || '',
       fichaStatus: property.fichaStatus || 'Sem ficha',
       fichaDataAtualizacao: property.fichaDataAtualizacao || null,
       captador: property.captador || 'Não informado',
+      corretor: property.corretor || '',
       vagoEm: property.vagoEm || null,
       liberadoEm: property.liberadoEm || null
     });
@@ -89,17 +93,12 @@ const firestoreService: PropertyService = {
 
   clearAll: async () => {
     if (!db) throw new Error("Firebase not initialized");
-    
-    // Firestore não tem um comando "delete collection", precisamos deletar documento por documento
     const q = query(collection(db, 'imoveis'));
     const snapshot = await getDocs(q);
-    
-    // Usamos batch para deletar em grupos (mais eficiente)
     const batch = writeBatch(db);
     snapshot.docs.forEach((doc) => {
       batch.delete(doc.ref);
     });
-    
     await batch.commit();
   },
 
@@ -111,44 +110,35 @@ const firestoreService: PropertyService = {
 
 /**
  * 2. MOCK SERVICE (LOCAL STORAGE)
- * Simulates Firestore behavior for the demo.
  */
-// Changed key to force reset and start clean
 const MOCK_STORAGE_KEY = 'imobi_control_data_clean'; 
-
-// Return empty array to start without data
 const generateMockData = (): Imovel[] => [];
 
 const mockService: PropertyService = {
   subscribeToProperties: (callback) => {
-    // Load initial
     let data = localStorage.getItem(MOCK_STORAGE_KEY);
     if (!data) {
       const initial = generateMockData();
       localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(initial));
       data = JSON.stringify(initial);
     }
-    
-    // Initial callback
     setTimeout(() => callback(JSON.parse(data!)), 100);
-
-    // Mock "Real-time" updates via polling specifically for this demo to catch localStorage changes
     const interval = setInterval(() => {
        const currentData = localStorage.getItem(MOCK_STORAGE_KEY);
        if (currentData) callback(JSON.parse(currentData));
     }, 1000);
-
     return () => clearInterval(interval);
   },
 
   addProperty: async (property) => {
-    await new Promise(r => setTimeout(r, 500)); // Simulate network
+    await new Promise(r => setTimeout(r, 500)); 
     const raw = localStorage.getItem(MOCK_STORAGE_KEY);
     const list: Imovel[] = raw ? JSON.parse(raw) : [];
     const newDoc = { 
       ...property, 
       id: Math.random().toString(36).substr(2, 9), 
       dataAtualizacao: Date.now(),
+      locador: property.locador || '',
       observacao: property.observacao || '',
       fichaStatus: property.fichaStatus || 'Sem ficha',
       captador: property.captador || 'Desconhecido'
@@ -185,7 +175,4 @@ const mockService: PropertyService = {
   }
 };
 
-// TOGGLE THIS to switch between Real and Mock
-// Estamos usando o firestoreService (Banco Real) agora.
-export const propertyService = firestoreService; 
-// export const propertyService = mockService;
+export const propertyService = firestoreService;

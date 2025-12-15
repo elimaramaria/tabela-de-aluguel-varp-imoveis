@@ -13,9 +13,18 @@ const statusStyles: Record<PropertyStatus, string> = {
   'Locado': 'bg-red-50 text-red-700 ring-red-600/10',
 };
 
+const dotColors: Record<PropertyStatus, string> = {
+  'Disponível': 'bg-emerald-500',
+  'Em processo de locação': 'bg-amber-500',
+  'Desocupando': 'bg-purple-500',
+  'Suspenso': 'bg-slate-500',
+  'Locado': 'bg-red-500',
+};
+
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ring-1 ring-inset ${statusStyles[status]} transition-all shadow-sm`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1 ring-inset ${statusStyles[status]} transition-all shadow-sm`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColors[status]}`} />
       {status}
     </span>
   );

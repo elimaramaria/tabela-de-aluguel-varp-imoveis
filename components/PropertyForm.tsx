@@ -1,23 +1,28 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Building2, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Building2, Calendar } from 'lucide-react';
 import { Imovel, PropertyStatus, PropertyType, FichaStatus } from '../types';
 import { propertyService } from '../services/propertyService';
 
 interface FormData {
   codigo: string;
+  locador: string; // Alterado
   endereco: string;
   bairro: string;
   tipo: PropertyType;
   valor: number;
+  iptu: number;
+  seguroIncendio: number;
   descricao: string;
-  observacao: string; // Novo campo
+  observacao: string;
   status: PropertyStatus;
   fichaStatus: FichaStatus;
+  fichaData: string; 
   captador: string;
+  corretor: string;
   vagoEm: string;
-  liberadoEm: string; // Novo campo
+  liberadoEm: string;
 }
 
 export const PropertyForm: React.FC = () => {
@@ -26,11 +31,20 @@ export const PropertyForm: React.FC = () => {
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     defaultValues: {
       fichaStatus: 'Sem ficha',
-      captador: ''
+      captador: '',
+      corretor: '',
+      locador: '',
+      iptu: 0,
+      seguroIncendio: 0
     }
   });
 
-  const [fichaDate, setFichaDate] = React.useState<number | null>(null);
+  const selectedFichaStatus = watch('fichaStatus');
+  const [showFichaDate, setShowFichaDate] = useState(false);
+
+  useEffect(() => {
+    setShowFichaDate(selectedFichaStatus === 'Com ficha');
+  }, [selectedFichaStatus]);
 
   useEffect(() => {
     if (id) {
@@ -38,15 +52,19 @@ export const PropertyForm: React.FC = () => {
         const found = properties.find(p => p.id === id);
         if (found) {
           setValue('codigo', found.codigo);
+          setValue('locador', found.locador || '');
           setValue('endereco', found.endereco);
           setValue('bairro', found.bairro);
           setValue('tipo', found.tipo);
           setValue('valor', found.valor);
+          setValue('iptu', found.iptu || 0);
+          setValue('seguroIncendio', found.seguroIncendio || 0);
           setValue('descricao', found.descricao);
           setValue('observacao', found.observacao || '');
           setValue('status', found.status);
           setValue('fichaStatus', found.fichaStatus || 'Sem ficha');
           setValue('captador', found.captador || '');
+          setValue('corretor', found.corretor || '');
           
           if (found.vagoEm) {
             const date = new Date(found.vagoEm);
@@ -58,8 +76,9 @@ export const PropertyForm: React.FC = () => {
             setValue('liberadoEm', date.toISOString().split('T')[0]);
           }
 
-          if (found.fichaDataAtualizacao) {
-            setFichaDate(found.fichaDataAtualizacao);
+          if (found.fichaDataAtualizacao && found.fichaStatus === 'Com ficha') {
+             const date = new Date(found.fichaDataAtualizacao);
+             setValue('fichaData', date.toISOString().split('T')[0]);
           }
         }
       });
@@ -72,19 +91,21 @@ export const PropertyForm: React.FC = () => {
       const payload: any = {
         ...data,
         vagoEm: data.vagoEm ? new Date(data.vagoEm).getTime() + 86400000 / 2 : null,
-        liberadoEm: data.liberadoEm ? new Date(data.liberadoEm).getTime() + 86400000 / 2 : null
+        liberadoEm: data.liberadoEm ? new Date(data.liberadoEm).getTime() + 86400000 / 2 : null,
+        fichaDataAtualizacao: data.fichaStatus === 'Com ficha' && data.fichaData 
+            ? new Date(data.fichaData).getTime() + 86400000 / 2 
+            : null
       };
 
+      // Remove campo auxiliar
+      delete payload.fichaData;
+
       if (id) {
-        if (data.fichaStatus !== 'Sem ficha') {
-           payload.fichaDataAtualizacao = Date.now();
-        }
         await propertyService.updateProperty(id, payload);
       } else {
         await propertyService.addProperty({ 
           ...payload, 
-          dataAtualizacao: Date.now(), 
-          fichaDataAtualizacao: Date.now() 
+          dataAtualizacao: Date.now()
         } as any);
       }
       navigate('/');
@@ -98,11 +119,6 @@ export const PropertyForm: React.FC = () => {
     }
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(timestamp));
-  };
-
-  // Common input class to ensure consistency
   const inputClass = "block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 bg-white text-slate-900 placeholder-slate-400";
 
   return (
@@ -131,170 +147,236 @@ export const PropertyForm: React.FC = () => {
                 <div>
                     <h2 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-b border-emerald-100 pb-2 mb-6 flex items-center">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                        Dados Principais
+                        Dados Principais & Valores
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Código</label>
-                        <input 
-                        type="text" 
-                        {...register('codigo', { required: 'Código é obrigatório' })}
-                        className={inputClass}
-                        placeholder="Ex: AP-100"
-                        />
-                        {errors.codigo && <span className="text-red-500 text-xs mt-1">{errors.codigo.message}</span>}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
-                        <select 
-                        {...register('tipo')}
-                        className={inputClass}
-                        >
-                        <option value="Casa">Casa</option>
-                        <option value="Apartamento">Apartamento</option>
-                        <option value="Kitnet">Kitnet</option>
-                        <option value="Sala">Sala Comercial</option>
-                        <option value="Loja">Loja</option>
-                        <option value="Comercial">Imóvel Comercial</option>
-                        <option value="Garagem">Garagem</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Valor Mensal (R$)</label>
-                        <div className="relative rounded-md shadow-sm">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 z-10">
-                            <span className="text-slate-500 sm:text-sm">R$</span>
-                            </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Código</label>
                             <input 
-                            type="number" 
-                            step="0.01"
-                            {...register('valor', { required: 'Valor é obrigatório', min: 0 })}
-                            className={`${inputClass} pl-10`}
-                            placeholder="0,00"
+                            type="text" 
+                            {...register('codigo', { required: 'Código é obrigatório' })}
+                            className={inputClass}
+                            placeholder="Ex: AP-100"
                             />
+                            {errors.codigo && <span className="text-red-500 text-xs mt-1">{errors.codigo.message}</span>}
                         </div>
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Status Atual</label>
-                        <select 
-                        {...register('status')}
-                        className={inputClass}
-                        >
-                        <option value="Disponível">Disponível</option>
-                        <option value="Em processo de locação">Em processo de locação</option>
-                        <option value="Desocupando">Desocupando</option>
-                        <option value="Suspenso">Suspenso</option>
-                        <option value="Locado">Locado</option>
-                        </select>
-                    </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+                            <select 
+                            {...register('tipo')}
+                            className={inputClass}
+                            >
+                            <option value="Casa">Casa</option>
+                            <option value="Apartamento">Apartamento</option>
+                            <option value="Kitnet">Kitnet</option>
+                            <option value="Sala">Sala Comercial</option>
+                            <option value="Loja">Loja</option>
+                            <option value="Comercial">Imóvel Comercial</option>
+                            <option value="Garagem">Garagem</option>
+                            </select>
+                        </div>
 
-                    <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Captador (Corretor)</label>
-                        <input 
-                        type="text" 
-                        {...register('captador', { required: 'Captador é obrigatório' })}
-                        placeholder="Nome do colaborador responsável"
-                        className={inputClass}
-                        />
-                        {errors.captador && <span className="text-red-500 text-xs mt-1">{errors.captador.message}</span>}
-                    </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Status Atual</label>
+                            <select 
+                            {...register('status')}
+                            className={inputClass}
+                            >
+                            <option value="Disponível">Disponível</option>
+                            <option value="Em processo de locação">Em processo de locação</option>
+                            <option value="Desocupando">Desocupando</option>
+                            <option value="Suspenso">Suspenso</option>
+                            <option value="Locado">Locado</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Valor Mensal (R$)</label>
+                            <div className="relative rounded-md shadow-sm">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 z-10">
+                                <span className="text-slate-500 sm:text-sm">R$</span>
+                                </div>
+                                <input 
+                                type="number" 
+                                step="0.01"
+                                {...register('valor', { required: 'Valor é obrigatório', min: 0 })}
+                                className={`${inputClass} pl-10`}
+                                placeholder="0,00"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">IPTU (Anual)</label>
+                            <div className="relative rounded-md shadow-sm">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 z-10">
+                                <span className="text-slate-500 sm:text-sm">R$</span>
+                                </div>
+                                <input 
+                                type="number" 
+                                step="0.01"
+                                {...register('iptu')}
+                                className={`${inputClass} pl-10`}
+                                placeholder="0,00"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">SI (Anual)</label>
+                            <div className="relative rounded-md shadow-sm">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 z-10">
+                                <span className="text-slate-500 sm:text-sm">R$</span>
+                                </div>
+                                <input 
+                                type="number" 
+                                step="0.01"
+                                {...register('seguroIncendio')}
+                                className={`${inputClass} pl-10`}
+                                placeholder="0,00"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Section 2: Localização */}
+                {/* Section 2: Responsáveis */}
                 <div>
                     <h2 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-b border-emerald-100 pb-2 mb-6 flex items-center">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                        Responsáveis
+                    </h2>
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Locador</label>
+                            <input 
+                            type="text" 
+                            {...register('locador')}
+                            placeholder="Nome ou código do proprietário"
+                            className={inputClass}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Captador</label>
+                            <input 
+                            type="text" 
+                            {...register('captador', { required: 'Captador é obrigatório' })}
+                            placeholder="Nome do captador"
+                            className={inputClass}
+                            />
+                            {errors.captador && <span className="text-red-500 text-xs mt-1">{errors.captador.message}</span>}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Corretor</label>
+                            <input 
+                            type="text" 
+                            {...register('corretor')}
+                            placeholder="Nome do corretor (opcional)"
+                            className={inputClass}
+                            />
+                        </div>
+                     </div>
+                </div>
+
+                {/* Section 3: Localização */}
+                <div>
+                    <h2 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-b border-emerald-100 pb-2 mb-6 flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
                         Localização
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Endereço Completo</label>
-                        <input 
-                        type="text" 
-                        {...register('endereco', { required: 'Endereço é obrigatório' })}
-                        className={inputClass}
-                        placeholder="Logradouro, número, complemento"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Bairro</label>
-                        <input 
-                        type="text" 
-                        {...register('bairro', { required: 'Bairro é obrigatório' })}
-                        className={inputClass}
-                        />
-                    </div>
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Endereço Completo</label>
+                            <input 
+                            type="text" 
+                            {...register('endereco', { required: 'Endereço é obrigatório' })}
+                            className={inputClass}
+                            placeholder="Logradouro, número, complemento"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Bairro</label>
+                            <input 
+                            type="text" 
+                            {...register('bairro', { required: 'Bairro é obrigatório' })}
+                            className={inputClass}
+                            />
+                        </div>
                     </div>
                 </div>
 
-                {/* Section 3: Informações adicionais */}
+                {/* Section 4: Informações adicionais */}
                 <div>
                     <h2 className="text-sm font-bold text-emerald-800 uppercase tracking-wider border-b border-emerald-100 pb-2 mb-6 flex items-center">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                        Detalhes & Ficha
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                        Detalhes do Imóvel
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Descrição Detalhada</label>
-                        <textarea 
-                        rows={3}
-                        {...register('descricao')}
-                        placeholder="Descreva os diferenciais do imóvel, quantidade de quartos, vagas, lazer..."
-                        className={inputClass}
-                        />
-                    </div>
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Descrição Detalhada</label>
+                            <textarea 
+                            rows={3}
+                            {...register('descricao')}
+                            placeholder="Descreva os diferenciais do imóvel, quantidade de quartos, vagas, lazer..."
+                            className={inputClass}
+                            />
+                        </div>
 
-                    <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Observações Internas</label>
-                        <textarea 
-                        rows={2}
-                        {...register('observacao')}
-                        placeholder="Informações extras, avisos sobre chaves, horários, etc. (Não visível em anúncios externos)"
-                        className={inputClass}
-                        />
-                    </div>
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Observações Internas</label>
+                            <textarea 
+                            rows={2}
+                            {...register('observacao')}
+                            placeholder="Informações extras, avisos sobre chaves, horários, etc. (Não visível em anúncios externos)"
+                            className={inputClass}
+                            />
+                        </div>
 
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <label className="block text-sm font-medium text-slate-900 mb-1">Status da Ficha</label>
-                        <select 
-                        {...register('fichaStatus')}
-                        className={`${inputClass} mb-2`}
-                        >
-                        <option value="Sem ficha">Sem ficha</option>
-                        <option value="Em andamento">Em andamento</option>
-                        <option value="Aprovada">Aprovada</option>
-                        </select>
-                        {fichaDate && (
-                        <p className="text-xs text-slate-500 flex items-center">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Última atualização: {formatDate(fichaDate)}
-                        </p>
-                        )}
-                    </div>
+                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <label className="block text-sm font-medium text-slate-900 mb-1">Situação do Imóvel</label>
+                            <select 
+                                {...register('fichaStatus')}
+                                className={`${inputClass} mb-2`}
+                            >
+                                <option value="Sem ficha">Sem ficha</option>
+                                <option value="Com ficha">Com ficha</option>
+                            </select>
+                            
+                            {showFichaDate && (
+                                <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <label className="block text-xs font-bold text-emerald-700 mb-1 flex items-center">
+                                        <Calendar className="w-3 h-3 mr-1" />
+                                        Data da Ficha
+                                    </label>
+                                    <input 
+                                        type="date"
+                                        {...register('fichaData')}
+                                        className={inputClass}
+                                    />
+                                </div>
+                            )}
+                        </div>
 
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <label className="block text-sm font-medium text-slate-900 mb-1">Previsão de Desocupação</label>
-                        <input 
-                        type="date"
-                        {...register('vagoEm')}
-                        className={inputClass}
-                        />
-                        <p className="mt-2 text-xs text-slate-500">Opcional. Se estiver saindo.</p>
-                    </div>
-
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <label className="block text-sm font-medium text-slate-900 mb-1">Liberado em</label>
-                        <input 
-                        type="date"
-                        {...register('liberadoEm')}
-                        className={inputClass}
-                        />
-                        <p className="mt-2 text-xs text-slate-500">Data de início da disponibilidade.</p>
-                    </div>
+                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <label className="block text-sm font-medium text-slate-900 mb-1">Liberado em</label>
+                            <input 
+                                type="date"
+                                {...register('liberadoEm')}
+                                className={inputClass}
+                            />
+                            <p className="mt-2 text-xs text-slate-500">Data de início da disponibilidade.</p>
+                        </div>
+                        
+                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <label className="block text-sm font-medium text-slate-900 mb-1">Previsão de Desocupação</label>
+                            <input 
+                                type="date"
+                                {...register('vagoEm')}
+                                className={inputClass}
+                            />
+                            <p className="mt-2 text-xs text-slate-500">Opcional. Se estiver saindo.</p>
+                        </div>
 
                     </div>
                 </div>

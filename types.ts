@@ -16,25 +16,30 @@ export type PropertyType =
 
 export type FichaStatus = 
   | 'Sem ficha' 
+  | 'Com ficha'
   | 'Em andamento' 
   | 'Aprovada';
 
 export interface Imovel {
   id: string;
   codigo: string;
+  locador?: string; // Alterado de locatario para locador
   endereco: string;
   bairro: string;
   tipo: PropertyType;
   valor: number;
+  iptu?: number;
+  seguroIncendio?: number;
   descricao: string;
-  observacao?: string; // Novo campo
+  observacao?: string;
   status: PropertyStatus;
-  dataAtualizacao: number; // Timestamp
+  dataAtualizacao: number;
   fichaStatus?: FichaStatus;
-  fichaDataAtualizacao?: number; // Timestamp
+  fichaDataAtualizacao?: number;
   captador: string; 
-  vagoEm?: number; // Timestamp
-  liberadoEm?: number; // Novo campo: Data de liberação
+  corretor?: string;
+  vagoEm?: number;
+  liberadoEm?: number;
 }
 
 export interface DashboardStats {
@@ -46,7 +51,6 @@ export interface DashboardStats {
   desocupando: number;
   suspenso: number;
   locado: number;
-  // Novos campos financeiros
   receitaMensal: number;
   potencialReceita: number;
 }
