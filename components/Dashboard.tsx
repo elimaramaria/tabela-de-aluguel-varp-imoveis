@@ -664,10 +664,10 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Data Table - Modernized */}
-                <div className="bg-white shadow-lg shadow-slate-200/50 rounded-2xl overflow-hidden border border-slate-100">
+                <div className="bg-white shadow-lg shadow-slate-200/50 rounded-2xl overflow-hidden border border-emerald-100">
                 <div className="overflow-x-auto custom-scrollbar">
-                    <table className="min-w-full divide-y divide-slate-100 table-fixed">
-                    <thead className="bg-slate-50/80">
+                    <table className="min-w-full divide-y divide-emerald-200 table-fixed">
+                    <thead className="bg-emerald-50/50">
                         <tr>
                         <SortableHeader className="w-24 whitespace-nowrap" label="LD" field="locador" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
                         <SortableHeader className="w-32 whitespace-nowrap" label="Bairro" field="bairro" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
@@ -685,7 +685,7 @@ export const Dashboard: React.FC = () => {
                         </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-slate-50">
+                    <tbody className="bg-white divide-y divide-emerald-100">
                         {properties.length === 0 ? (
                         <tr>
                             <td colSpan={11} className="px-6 py-16 text-center text-slate-400">
