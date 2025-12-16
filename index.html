@@ -52,22 +52,713 @@
         from { opacity: 0; transform: translateY(5px); }
         to { opacity: 1; transform: translateY(0); }
       }
+
+      /* Utilitários para esconder/mostrar telas */
+      .hidden { display: none !important; }
     </style>
 <script type="importmap">
 {
   "imports": {
     "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1",
-    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react-hook-form": "https://esm.sh/react-hook-form@^7.68.0",
     "firebase/": "https://esm.sh/firebase@^12.6.0/",
-    "react-hook-form": "https://esm.sh/react-hook-form@^7.68.0"
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0"
   }
 }
 </script>
 </head>
 <body>
-    <div id="root"></div>
+
+    <!-- APP CONTAINER -->
+    <div id="app" class="min-h-screen bg-slate-50 pb-20 font-sans">
+        
+        <!-- HEADER -->
+        <header class="bg-white border-t-4 border-t-emerald-900 border-b border-b-slate-200 shadow-sm sticky top-0 z-20">
+            <div class="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <!-- Logotype -->
+                    <div class="flex flex-col items-start justify-center cursor-pointer" onclick="window.app.resetFilters()">
+                        <div class="text-green-800 font-bold text-xl tracking-tighter leading-none">
+                        VARP <span class="text-gray-600 text-xs font-normal tracking-normal">Imóveis</span>
+                        </div>
+                        <div class="text-[9px] text-yellow-600 font-serif italic">Desde 1978</div>
+                    </div>
+                    
+                    <div class="h-6 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+                    
+                    <!-- View Switcher Tabs -->
+                    <div class="flex bg-slate-100 rounded-lg p-1" id="view-switcher">
+                        <button onclick="window.app.setViewMode('list')" id="btn-view-list" class="flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-white text-emerald-800 shadow-sm">
+                            <i data-lucide="list" class="w-3.5 h-3.5 mr-1.5"></i>
+                            Imóveis
+                        </button>
+                        <button onclick="window.app.setViewMode('financial')" id="btn-view-financial" class="flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-500 hover:text-slate-700">
+                            <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 mr-1.5"></i>
+                            Financeiro
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Bairro Filter (Header) -->
+                <div class="flex-1 max-w-xs mx-4 hidden md:block relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-lucide="map-pin" class="h-3.5 w-3.5 text-slate-400"></i>
+                    </div>
+                    <input type="text" id="header-bairro-filter"
+                        class="block w-full pl-9 pr-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 focus:bg-white transition-all text-xs font-medium"
+                        placeholder="Filtrar por bairro..." oninput="window.app.updateFilters('bairro', this.value)">
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center gap-2">
+                    <div class="hidden md:flex items-center gap-1 mr-2 bg-slate-100 rounded-full p-0.5">
+                        <button onclick="window.app.exportCSV()" title="Exportar CSV" class="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-white rounded-full transition-all shadow-sm">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <!-- Botões de limpar removidos para simplificar, ou podem ser mantidos se desejar -->
+                    </div>
+
+                    <button onclick="window.app.openForm()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-md text-xs font-bold text-white bg-emerald-800 hover:bg-emerald-900 focus:outline-none transition-all transform hover:-translate-y-0.5">
+                        <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i>
+                        Novo
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="w-full px-4 sm:px-6 lg:px-8 mt-6">
+            
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="fade-in">
+                
+                <!-- Financial Stats Section (Visible only in financial mode) -->
+                <div id="financial-section" class="hidden mb-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5 mr-2 text-emerald-700"></i>
+                        Painel Financeiro & Ocupação
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="financial-cards">
+                        <!-- Cards injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Status Cards (Visible in list mode) -->
+                <div id="status-section" class="grid grid-cols-3 md:grid-cols-6 gap-2 mb-5">
+                    <!-- Cards injected by JS -->
+                </div>
+
+                <!-- Filters Bar -->
+                <div id="filters-bar" class="bg-white p-1 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 relative z-10">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="search" class="h-4 w-4 text-slate-400"></i>
+                        </div>
+                        <input type="text" id="search-input"
+                            class="block w-full pl-9 pr-16 py-2 rounded-lg border-none bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-colors text-xs font-medium"
+                            placeholder="Ex: Centro João (Busca múltipla...)" oninput="window.app.updateFilters('search', this.value)">
+                        <div id="search-count" class="absolute inset-y-0 right-0 pr-2 flex items-center gap-2 hidden">
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm" id="count-badge">0</span>
+                            <button onclick="window.app.clearSearch()" class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"><i data-lucide="x" class="w-3 h-3"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 pr-1">
+                        <!-- Status Filter Dropdown Simulation -->
+                        <div class="relative">
+                            <select id="status-select" onchange="window.app.updateFilters('status', this.value)" 
+                                class="bg-slate-50 hover:bg-slate-100 rounded-lg px-3 py-2 border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer appearance-none pr-8">
+                                <option value="Todos">Status: Todos</option>
+                                <option value="Disponível">Disponível</option>
+                                <option value="Em processo de locação">Em Processo</option>
+                                <option value="Desocupando">Desocupando</option>
+                                <option value="Locado">Locado</option>
+                                <option value="Suspenso">Suspenso</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-2 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABLE -->
+                <div class="bg-white shadow-lg shadow-slate-200/50 rounded-2xl overflow-hidden border border-emerald-100">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="min-w-full divide-y divide-emerald-200 table-fixed">
+                            <thead class="bg-emerald-50/50">
+                                <tr>
+                                    <th onclick="window.app.sort('locador')" class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-emerald-700 w-24">LD</th>
+                                    <th onclick="window.app.sort('bairro')" class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-emerald-700 w-32">Bairro</th>
+                                    <th onclick="window.app.sort('tipo')" class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-emerald-700 w-24">Tipo</th>
+                                    <th class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider w-64">Descrição</th>
+                                    <th class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider w-56">Endereço</th>
+                                    <th onclick="window.app.sort('valor')" class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-emerald-700 w-32">Valores</th>
+                                    <th onclick="window.app.sort('codigo')" class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-emerald-700 w-24">Código</th>
+                                    <th class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider w-40">Obs</th>
+                                    <th onclick="window.app.sort('fichaStatus')" class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-emerald-700 w-28">Ficha</th>
+                                    <th onclick="window.app.sort('status')" class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-emerald-700 w-28">Status</th>
+                                    <th onclick="window.app.sort('dataAtualizacao')" class="px-6 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-emerald-700 w-32">Atualização</th>
+                                    <th class="px-6 py-3 w-16"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="properties-table-body" class="bg-white divide-y divide-emerald-100">
+                                <!-- Rows injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORM VIEW (Hidden by default) -->
+            <div id="view-form" class="hidden fade-in max-w-7xl mx-auto">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center gap-3">
+                         <div class="p-2 bg-emerald-900 rounded-lg text-white shadow-md">
+                             <i data-lucide="building-2" class="w-6 h-6"></i>
+                         </div>
+                         <h1 id="form-title" class="text-2xl font-bold text-slate-900 tracking-tight">Cadastrar Novo Imóvel</h1>
+                    </div>
+                    <button onclick="window.app.closeForm()" class="flex items-center text-slate-600 hover:text-emerald-800 hover:bg-white transition-all font-medium text-sm bg-slate-50 px-4 py-2 rounded-lg shadow-sm border border-slate-200">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+                        Voltar para lista
+                    </button>
+                </div>
+
+                <form id="property-form" onsubmit="window.app.saveProperty(event)" class="bg-white shadow-xl shadow-slate-200/60 rounded-2xl overflow-hidden border border-slate-100">
+                    <input type="hidden" id="form-id">
+                    <div class="p-8 space-y-10">
+                        
+                        <!-- Dados Principais -->
+                        <div>
+                            <h2 class="text-sm font-bold text-emerald-800 uppercase tracking-wider border-b border-emerald-100 pb-2 mb-6 flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                                Dados Principais & Valores
+                            </h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Código *</label>
+                                    <input type="text" id="form-codigo" required class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border" placeholder="Ex: AP-100">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+                                    <select id="form-tipo" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border">
+                                        <option value="Casa">Casa</option>
+                                        <option value="Apartamento">Apartamento</option>
+                                        <option value="Kitnet">Kitnet</option>
+                                        <option value="Sala">Sala Comercial</option>
+                                        <option value="Loja">Loja</option>
+                                        <option value="Comercial">Imóvel Comercial</option>
+                                        <option value="Garagem">Garagem</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Status Atual</label>
+                                    <select id="form-status" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border">
+                                        <option value="Disponível">Disponível</option>
+                                        <option value="Em processo de locação">Em processo de locação</option>
+                                        <option value="Desocupando">Desocupando</option>
+                                        <option value="Suspenso">Suspenso</option>
+                                        <option value="Locado">Locado</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Valor Mensal (R$)</label>
+                                    <input type="number" step="0.01" id="form-valor" required class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border" placeholder="0.00">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">IPTU (Anual)</label>
+                                    <input type="number" step="0.01" id="form-iptu" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border" placeholder="0.00">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">SI (Anual)</label>
+                                    <input type="number" step="0.01" id="form-seguro" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Responsáveis -->
+                        <div>
+                            <h2 class="text-sm font-bold text-emerald-800 uppercase tracking-wider border-b border-emerald-100 pb-2 mb-6 flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                                Responsáveis
+                            </h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Locador</label>
+                                    <input type="text" id="form-locador" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Captador *</label>
+                                    <input type="text" id="form-captador" required class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Corretor</label>
+                                    <input type="text" id="form-corretor" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Localização -->
+                        <div>
+                            <h2 class="text-sm font-bold text-emerald-800 uppercase tracking-wider border-b border-emerald-100 pb-2 mb-6 flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                                Localização
+                            </h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Endereço Completo *</label>
+                                    <input type="text" id="form-endereco" required class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Bairro *</label>
+                                    <input type="text" id="form-bairro" required class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalhes -->
+                        <div>
+                            <h2 class="text-sm font-bold text-emerald-800 uppercase tracking-wider border-b border-emerald-100 pb-2 mb-6 flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                                Detalhes do Imóvel
+                            </h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
+                                    <textarea id="form-descricao" rows="3" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border"></textarea>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Observações Internas</label>
+                                    <textarea id="form-observacao" rows="2" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border"></textarea>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <label class="block text-sm font-medium text-slate-900 mb-1">Situação da Ficha</label>
+                                    <select id="form-fichaStatus" class="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-2.5 px-3 border mb-2">
+                                        <option value="Sem ficha">Sem ficha</option>
+                                        <option value="Com ficha">Com ficha</option>
+                                        <option value="Em andamento">Em andamento</option>
+                                        <option value="Aprovada">Aprovada</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="px-8 py-5 bg-slate-50 border-t border-slate-200 flex justify-end">
+                        <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-emerald-800 hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all">
+                            <i data-lucide="save" class="w-5 h-5 mr-2"></i>
+                            Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBg8yP8TQrT6m34EGlkExa5yhou4833U80",
+            authDomain: "tabela-de-aluguel.firebaseapp.com",
+            projectId: "tabela-de-aluguel",
+            storageBucket: "tabela-de-aluguel.firebasestorage.app",
+            messagingSenderId: "1083451634894",
+            appId: "1:1083451634894:web:655c0791b3cd57751c8c9f"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const db = getFirestore(firebaseApp);
+
+        // STATE
+        const state = {
+            properties: [],
+            viewMode: 'list', // 'list' | 'financial'
+            filter: {
+                search: '',
+                status: 'Todos',
+                category: 'Todos',
+                bairro: ''
+            },
+            sort: {
+                field: 'dataAtualizacao',
+                direction: 'desc'
+            },
+            editingId: null
+        };
+
+        // FORMATTERS
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
+        const formatCurrencyFull = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        const formatDate = (ts) => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(ts));
+
+        // RENDER HELPERS
+        const renderStatusBadge = (status) => {
+            const styles = {
+                'Disponível': 'bg-emerald-100 text-emerald-800 ring-emerald-600/20',
+                'Em processo de locação': 'bg-amber-100 text-amber-800 ring-amber-600/20',
+                'Desocupando': 'bg-purple-100 text-purple-800 ring-purple-600/20',
+                'Suspenso': 'bg-slate-100 text-slate-600 ring-slate-500/10',
+                'Locado': 'bg-red-50 text-red-700 ring-red-600/10'
+            };
+            const dots = {
+                'Disponível': 'bg-emerald-500',
+                'Em processo de locação': 'bg-amber-500',
+                'Desocupando': 'bg-purple-500',
+                'Suspenso': 'bg-slate-500',
+                'Locado': 'bg-red-500'
+            };
+            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1 ring-inset ${styles[status] || styles['Suspenso']}">
+                <span class="w-1.5 h-1.5 rounded-full ${dots[status] || dots['Suspenso']}"></span>
+                ${status}
+            </span>`;
+        };
+
+        const renderFichaBadge = (status) => {
+            const s = status || 'Sem ficha';
+            let classes = "bg-slate-100 text-slate-500 border-slate-200";
+            let dotColor = "bg-slate-400";
+            if (s === 'Em andamento') { classes = "bg-amber-50 text-amber-700 border-amber-200 ring-1 ring-amber-500/20"; dotColor = "bg-amber-500"; }
+            if (s === 'Aprovada') { classes = "bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-500/20"; dotColor = "bg-emerald-500"; }
+            if (s === 'Com ficha') { classes = "bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-500/20"; dotColor = "bg-blue-500"; }
+            
+            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${classes}">
+                <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+                ${s}
+            </span>`;
+        };
+
+        // CORE FUNCTIONS
+        const getFilteredProperties = () => {
+            return state.properties.filter(p => {
+                const searchLower = state.filter.search.toLowerCase();
+                const terms = searchLower.split(/\s+/).filter(t => t.length > 0);
+                
+                const matchesSearch = terms.length === 0 || terms.every(term => (
+                    (p.codigo || '').toLowerCase().includes(term) ||
+                    (p.locador || '').toLowerCase().includes(term) ||
+                    (p.endereco || '').toLowerCase().includes(term) ||
+                    (p.bairro || '').toLowerCase().includes(term) ||
+                    (p.captador || '').toLowerCase().includes(term) ||
+                    (p.descricao || '').toLowerCase().includes(term) ||
+                    (p.observacao || '').toLowerCase().includes(term)
+                ));
+
+                const matchesStatus = state.filter.status === 'Todos' || p.status === state.filter.status;
+                const matchesBairro = p.bairro.toLowerCase().includes(state.filter.bairro.toLowerCase());
+
+                return matchesSearch && matchesStatus && matchesBairro;
+            }).sort((a, b) => {
+                const valA = a[state.sort.field];
+                const valB = b[state.sort.field];
+                if (valA === valB) return 0;
+                if (!valA) return 1;
+                if (!valB) return -1;
+                
+                if (state.sort.direction === 'asc') return valA < valB ? -1 : 1;
+                return valA > valB ? -1 : 1;
+            });
+        };
+
+        const renderTable = () => {
+            const tbody = document.getElementById('properties-table-body');
+            const filtered = getFilteredProperties();
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" class="px-6 py-16 text-center text-slate-400">Nenhum imóvel encontrado.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(p => `
+                <tr class="hover:bg-emerald-50/30 transition-colors group">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-bold align-top">
+                        <div class="block max-w-[100px] truncate" title="${p.locador || ''}">${p.locador || '-'}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500 align-top">
+                        <div class="block max-w-[12rem] truncate" title="${p.bairro}">${p.bairro}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 align-top">${p.tipo}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500 align-top">
+                        <div class="block min-w-[200px] whitespace-normal break-words line-clamp-2">${p.descricao || ''}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-500 align-top">
+                        <div class="block min-w-[180px] whitespace-normal break-words line-clamp-2" title="${p.endereco}">${p.endereco}</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm align-top bg-emerald-50/30 rounded-lg">
+                        <div class="flex flex-col">
+                            <span class="text-emerald-800 font-bold text-sm">${formatCurrencyFull(p.valor)}</span>
+                            ${(Number(p.iptu) > 0 || Number(p.seguroIncendio) > 0) ? `
+                            <div class="mt-1 flex flex-col gap-0.5 border-t border-emerald-100 pt-1">
+                                ${Number(p.iptu) > 0 ? `
+                                <div class="flex items-center justify-between text-[10px] text-slate-500">
+                                    <span class="uppercase tracking-wider mr-1">IPTU</span>
+                                    <span class="font-medium">${formatCurrencyFull(p.iptu)}</span>
+                                </div>` : ''}
+                                ${Number(p.seguroIncendio) > 0 ? `
+                                <div class="flex items-center justify-between text-[10px] text-slate-500">
+                                    <span class="uppercase tracking-wider mr-1">SI</span>
+                                    <span class="font-medium">${formatCurrencyFull(p.seguroIncendio)}</span>
+                                </div>` : ''}
+                            </div>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800 tracking-tight align-top">${p.codigo}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500 align-top">
+                         <div class="block max-w-[10rem] truncate" title="${p.observacao}">${p.observacao || '-'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap align-top">${renderFichaBadge(p.fichaStatus)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap align-top">${renderStatusBadge(p.status)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-400 font-medium align-top">${formatDate(p.dataAtualizacao)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative align-top">
+                        <button onclick="window.app.editProperty('${p.id}')" class="text-slate-400 hover:text-emerald-600 mr-2"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                        <button onclick="window.app.deleteProperty('${p.id}')" class="text-slate-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            lucide.createIcons();
+            
+            // Update counts
+            const countEl = document.getElementById('search-count');
+            const badgeEl = document.getElementById('count-badge');
+            if (state.filter.search) {
+                countEl.classList.remove('hidden');
+                badgeEl.innerText = filtered.length;
+            } else {
+                countEl.classList.add('hidden');
+            }
+        };
+
+        const renderStats = () => {
+            const s = state.properties.reduce((acc, curr) => {
+                acc.total++;
+                const val = Number(curr.valor) || 0;
+                if (curr.status === 'Disponível') { acc.disponivel++; acc.potencial += val; }
+                if (curr.status === 'Em processo de locação') { acc.emProcesso++; acc.potencial += val; }
+                if (curr.status === 'Desocupando') { acc.desocupando++; acc.receita += val; }
+                if (curr.status === 'Locado') { acc.locado++; acc.receita += val; }
+                if (curr.status === 'Suspenso') acc.suspenso++;
+                return acc;
+            }, { total: 0, disponivel: 0, emProcesso: 0, desocupando: 0, locado: 0, suspenso: 0, receita: 0, potencial: 0 });
+
+            // Financial View
+            document.getElementById('financial-cards').innerHTML = `
+                <div class="p-4 bg-white border border-emerald-200 rounded-xl shadow-sm">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Receita Mensal</div>
+                    <div class="text-2xl font-bold text-emerald-700">${formatCurrency(s.receita)}</div>
+                </div>
+                <div class="p-4 bg-white border border-slate-200 rounded-xl">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Potencial</div>
+                    <div class="text-2xl font-bold text-slate-500">${formatCurrency(s.potencial)}</div>
+                </div>
+                <div class="p-4 bg-white border border-indigo-100 rounded-xl shadow-sm">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Ocupação</div>
+                    <div class="text-2xl font-bold text-indigo-600">${s.total > 0 ? Math.round(((s.locado + s.desocupando)/s.total)*100) : 0}%</div>
+                </div>
+            `;
+
+            // List View Chips
+            const chips = [
+                { l: 'Total', v: s.total, c: 'text-blue-700', b: 'bg-white border-slate-200', f: 'Todos' },
+                { l: 'Disponíveis', v: s.disponivel, c: 'text-emerald-600', b: 'bg-white border-emerald-100', f: 'Disponível' },
+                { l: 'Em Processo', v: s.emProcesso, c: 'text-amber-600', b: 'bg-white border-amber-100', f: 'Em processo de locação' },
+                { l: 'Desocupando', v: s.desocupando, c: 'text-purple-600', b: 'bg-white border-purple-100', f: 'Desocupando' },
+                { l: 'Suspensos', v: s.suspenso, c: 'text-slate-500', b: 'bg-slate-50 border-slate-200', f: 'Suspenso' },
+                { l: 'Locados', v: s.locado, c: 'text-red-500', b: 'bg-white border-red-100', f: 'Locado' },
+            ];
+
+            document.getElementById('status-section').innerHTML = chips.map(c => `
+                <div onclick="window.app.updateFilters('status', '${c.f}')" 
+                    class="p-2 rounded-xl border cursor-pointer hover:shadow-md transition-all ${c.b} ${state.filter.status === c.f ? 'ring-2 ring-emerald-500' : ''}">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-bold uppercase ${c.c}">${c.l}</span>
+                    </div>
+                    <span class="text-lg font-bold ${c.c}">${c.v}</span>
+                </div>
+            `).join('');
+            
+            // Sync status select
+            document.getElementById('status-select').value = state.filter.status;
+            lucide.createIcons();
+        };
+
+        const renderApp = () => {
+            const isDash = state.viewMode !== 'form';
+            document.getElementById('view-dashboard').classList.toggle('hidden', !isDash);
+            document.getElementById('view-form').classList.toggle('hidden', isDash);
+            
+            // Toggle Header Search
+            document.getElementById('header-bairro-filter').parentElement.classList.toggle('hidden', !isDash);
+            document.getElementById('view-switcher').classList.toggle('hidden', !isDash);
+
+            if (isDash) {
+                const isFin = state.viewMode === 'financial';
+                document.getElementById('financial-section').classList.toggle('hidden', !isFin);
+                
+                // Toggle active tab style
+                const btnList = document.getElementById('btn-view-list');
+                const btnFin = document.getElementById('btn-view-financial');
+                
+                if (isFin) {
+                    btnList.classList.replace('bg-white', 'text-slate-500'); btnList.classList.remove('shadow-sm', 'text-emerald-800');
+                    btnFin.classList.add('bg-white', 'text-emerald-800', 'shadow-sm'); btnFin.classList.remove('text-slate-500');
+                } else {
+                    btnFin.classList.replace('bg-white', 'text-slate-500'); btnFin.classList.remove('shadow-sm', 'text-emerald-800');
+                    btnList.classList.add('bg-white', 'text-emerald-800', 'shadow-sm'); btnList.classList.remove('text-slate-500');
+                }
+
+                renderStats();
+                renderTable();
+            }
+        };
+
+        // EXPOSED ACTIONS (WINDOW BINDING)
+        window.app = {
+            setViewMode: (mode) => {
+                state.viewMode = mode;
+                renderApp();
+            },
+            updateFilters: (key, val) => {
+                state.filter[key] = val;
+                renderApp();
+            },
+            resetFilters: () => {
+                state.filter = { search: '', status: 'Todos', category: 'Todos', bairro: '' };
+                document.getElementById('search-input').value = '';
+                document.getElementById('header-bairro-filter').value = '';
+                renderApp();
+            },
+            clearSearch: () => {
+                window.app.updateFilters('search', '');
+                document.getElementById('search-input').value = '';
+            },
+            sort: (field) => {
+                if (state.sort.field === field) {
+                    state.sort.direction = state.sort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    state.sort.field = field;
+                    state.sort.direction = 'desc';
+                }
+                renderApp();
+            },
+            openForm: () => {
+                state.editingId = null;
+                state.viewMode = 'form';
+                document.getElementById('form-title').innerText = 'Cadastrar Novo Imóvel';
+                document.getElementById('property-form').reset();
+                document.getElementById('form-id').value = '';
+                renderApp();
+            },
+            closeForm: () => {
+                state.viewMode = 'list';
+                renderApp();
+            },
+            editProperty: (id) => {
+                const p = state.properties.find(i => i.id === id);
+                if (!p) return;
+                state.editingId = id;
+                state.viewMode = 'form';
+                document.getElementById('form-title').innerText = 'Editar Imóvel ' + p.codigo;
+                
+                // Populate Fields
+                document.getElementById('form-id').value = p.id;
+                document.getElementById('form-codigo').value = p.codigo;
+                document.getElementById('form-tipo').value = p.tipo;
+                document.getElementById('form-status').value = p.status;
+                document.getElementById('form-valor').value = p.valor;
+                document.getElementById('form-iptu').value = p.iptu || '';
+                document.getElementById('form-seguro').value = p.seguroIncendio || '';
+                document.getElementById('form-locador').value = p.locador || '';
+                document.getElementById('form-captador').value = p.captador || '';
+                document.getElementById('form-corretor').value = p.corretor || '';
+                document.getElementById('form-endereco').value = p.endereco;
+                document.getElementById('form-bairro').value = p.bairro;
+                document.getElementById('form-descricao').value = p.descricao;
+                document.getElementById('form-observacao').value = p.observacao || '';
+                document.getElementById('form-fichaStatus').value = p.fichaStatus || 'Sem ficha';
+
+                renderApp();
+            },
+            saveProperty: async (e) => {
+                e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = 'Salvando...';
+                btn.disabled = true;
+
+                try {
+                    const id = document.getElementById('form-id').value;
+                    const data = {
+                        codigo: document.getElementById('form-codigo').value,
+                        tipo: document.getElementById('form-tipo').value,
+                        status: document.getElementById('form-status').value,
+                        valor: Number(document.getElementById('form-valor').value),
+                        iptu: Number(document.getElementById('form-iptu').value),
+                        seguroIncendio: Number(document.getElementById('form-seguro').value),
+                        locador: document.getElementById('form-locador').value,
+                        captador: document.getElementById('form-captador').value,
+                        corretor: document.getElementById('form-corretor').value,
+                        endereco: document.getElementById('form-endereco').value,
+                        bairro: document.getElementById('form-bairro').value,
+                        descricao: document.getElementById('form-descricao').value,
+                        observacao: document.getElementById('form-observacao').value,
+                        fichaStatus: document.getElementById('form-fichaStatus').value,
+                        dataAtualizacao: Date.now()
+                    };
+
+                    if (id) {
+                        await updateDoc(doc(db, 'imoveis', id), data);
+                    } else {
+                        await addDoc(collection(db, 'imoveis'), data);
+                    }
+                    window.app.closeForm();
+                } catch (err) {
+                    console.error(err);
+                    alert('Erro ao salvar: ' + err.message);
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            },
+            deleteProperty: async (id) => {
+                if(!confirm('Tem certeza que deseja excluir?')) return;
+                try {
+                    await deleteDoc(doc(db, 'imoveis', id));
+                } catch (err) {
+                    alert('Erro ao excluir: ' + err.message);
+                }
+            },
+            exportCSV: () => {
+                const filtered = getFilteredProperties();
+                if (!filtered.length) return alert('Nada para exportar');
+                
+                const headers = ["LD", "Bairro", "Tipo", "Descrição", "Endereço", "Valor", "IPTU", "Seg. Incêndio", "Código", "Observação", "Ficha", "Status"];
+                const rows = filtered.map(p => [
+                    p.locador || '', p.bairro, p.tipo, `"${(p.descricao||'').replace(/"/g,'""')}"`, p.endereco,
+                    (p.valor||0).toString().replace('.',','), (p.iptu||0).toString().replace('.',','), (p.seguroIncendio||0).toString().replace('.',','),
+                    p.codigo, `"${(p.observacao||'').replace(/"/g,'""')}"`, p.fichaStatus, p.status
+                ]);
+                
+                const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+                const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `varp_imoveis_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+            }
+        };
+
+        // INIT
+        onSnapshot(query(collection(db, 'imoveis'), orderBy('dataAtualizacao', 'desc')), (snap) => {
+            state.properties = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderApp();
+        });
+    </script>
 </body>
 </html>
